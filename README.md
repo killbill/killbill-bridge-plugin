@@ -3,7 +3,8 @@
 
 The `killbill-bridge-plugin`, or in short `bridge`, is intended to bridge two deployments of Kill Bill, one used as a subscription/invoice engine (`KB Subscription` or in short `KB-S`) , and the other one used as an internal payment gateway (`KB Payment` or in short `KB-P`):
 
-image:https://github.com/killbill/killbill-bridge-plugin/blob/master/assets/KillBillBridgePlugin.png[align=center]
+
+![alt text](https://github.com/killbill/killbill-bridge-plugin/blob/master/assets/KillBillBridgePlugin.png "Bridge Deployment")
 
 The `KB-S` system will provide all the normal functionality, including payment operations, but those will be delegated to `KB-P`. There are numerous reasons why a company would want to adopt this model:
 
