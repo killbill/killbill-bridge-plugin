@@ -49,6 +49,7 @@ In addition for each tenant, the details of the `api_key` and `api_secret` will 
 * `org.killbill.billing.plugin.bridge.requestTimeout` (Optional)
 * `org.killbill.billing.plugin.bridge.strictSSL` (Optional)
 * `org.killbill.billing.plugin.bridge.SSLProtocol` (Optional)
+* `org.killbill.billing.plugin.bridge.internalPaymentMethodIdName` (Default to `internalPaymentMethodId`)
 
 # Internals
 
