@@ -1,11 +1,32 @@
-Kill Bill bridge plugin
-=======================
+# Overview
+
+
+The `killbill-bridge-plugin`, or in short `bridge`, is intended to bridge two deployments of Kill Bill, one used as a subscription/invoice engine (`KB Subscription` or in short `KB-S`) , and the other one used as an internal payment gateway (`KB Payment` or in short `KB-P`):
+
+image:https://github.com/killbill/killbill-bridge-plugin/blob/master/assets/KillBillBridgePlugin.png[align=center]
+
+The `KB-S` system will provide all the normal functionality, including payment operations, but those will be delegated to `KB-P`. There are numerous reasons why a company would want to adopt this model:
+
+* Keeping invoice/subscription engine separate from payment system fits well in a micro-services architecture model
+* Related to previous micro-services architecture point, this also allows to decouple the responsabilties -- different teams, deployment schedule,...
+* Allow to fully leverage the internal payment gateway to implement more advanced things like payment routing, payment optimization, ... while keeping all this aspect hidden from core subscription/invoice engine
+* Different compliance scopes (SOX, PII, PCI, ...)
+
+## Models
+
+There are two main models that we can identify:
+
+1. The `KB-P` is used as a simple internal payment gateway but does not do any dynamic payment routing: In this model, each 
+`paymentMethod` associated with an `Account` in `KB-S` reflects the plugin that should be used (e.g `stripe`) on the `KB-P` side -- that is, the `pluginName` associated to each `paymentMethod` will correctly show `killbill-stripe` in this example.  The `KB-P` is completely transparent and really works as a proxy.
+
+2. In this second model, the `KB-P` is used as a dynamic payment gateway. It can route payments based on rules such as latency, errors, BIN-level optimization, business-level rules -- mimimum volume to meet contract terms, ... In this case, creating a `paymentMethod` associated with an `Account` in the `KB-S` will **not** create a matching  `paymentMethod` on the `KB-P` side; instead, the `bridge` will make initiate all the payment requests with a null `paymentMethodId` and rely on the control payment layer on the `KB-P` side to automatically to the payment routing.
+
+
+# Configuration
+
 
 This plugin implements the [Kill Bill payment plugin api](https://github.com/killbill/killbill-plugin-api/blob/master/payment/src/main/java/org/killbill/billing/payment/plugin/api/PaymentPluginApi.java) and is intended to connect as a bridge between a Kill Bill system operating for handling billing components (Subscriptions, Invoices, ...) 
 and another Kill Bill system operating for handling payments.
-
-
-= Configuration =
 
 The plugin will need to have the default configuration parameter to connect to the remote Kill Bill (payment) system.
 In addition for each tenant, the details of the `api_key` and `api_secret` will be required.
@@ -24,4 +45,8 @@ In addition for each tenant, the details of the `api_key` and `api_secret` will 
 * `org.killbill.billing.plugin.bridge.requestTimeout` (Optional)
 * `org.killbill.billing.plugin.bridge.strictSSL` (Optional)
 * `org.killbill.billing.plugin.bridge.SSLProtocol` (Optional)
+
+# Internals
+
+
 
