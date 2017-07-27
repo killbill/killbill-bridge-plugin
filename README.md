@@ -53,6 +53,21 @@ In addition for each tenant, the details of the `api_key` and `api_secret` will 
 
 # Internals
 
+## ID Mappings
+
+
+Each KB system, `KB-S` and `KB-P` manages different objects entities (e.g `Account`) and those will have different ids on the different systems. Therefore in the most generic use case, the `bridge` will be responsible to make the id translation (e.g mapping a `KB-S` `Account` id with its counterpart `KB-P` `Account` id). In order to avoid keeping state in the plugin (id mapping table), we will use the `externalKey` associated with each object to keep this mapping:
+
+* When creating an `Account`, the bridge will set the `KB-P` `Account` `externalKey` with the `KB-S` `Account` `id`. That way, each request coming in and specifying the `KB-S` `Account` `id` can be resolved by first fetching (or creating) the `KB-P` `Account` using `externalKey` and then extracting the `id` on the resulting object and therefore resoling this mapping.
+
+* On the `PaymentMethod` side this will depend on the model (`proxy` versus `proxy-routing`): For the `proxy` model, this story is similar to what we described for the `Account`. For the `proxy-routing` use case, the `bridge` does not create any `PaymentMethod` on the `KP-P` system, because it sends an null `paymentMethodId` and relies on the `Control Payment` plugin to create those on the fly as needed (routing logic).
+
+* On the `Payment` and `Transaction` side, the bridge will also rely on the `externalKey`, similarly to what is done for `Account`.
+
+
+
+
+
 
 
 
