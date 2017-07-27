@@ -6,12 +6,15 @@ The `killbill-bridge-plugin`, or in short `bridge`, is intended to bridge two de
 
 ![alt text](https://github.com/killbill/killbill-bridge-plugin/blob/master/assets/KillBillBridgePlugin.png "Bridge Deployment")
 
+The `bridge` really plays two different functions, one of which is to offer a payment control layer, by implementing the [Kill Bill payment control plugin api](https://github.com/killbill/killbill-plugin-api/blob/master/control/src/main/java/org/killbill/billing/control/plugin/api/PaymentControlPluginApi.java), and the other is the payment plugin itself by implementing the [Kill Bill payment plugin api](https://github.com/killbill/killbill-plugin-api/blob/master/payment/src/main/java/org/killbill/billing/payment/plugin/api/PaymentPluginApi.java). The  payment control layer is used to modify incoming payment requests prior it reaches the payment plugin operation itself (e.g `authorization`).
+
 The `KB-S` system will provide all the normal functionality, including payment operations, but those will be delegated to `KB-P`. There are numerous reasons why a company would want to adopt this model:
 
 * Keeping invoice/subscription engine separate from payment system fits well in a micro-services architecture model
 * Related to previous micro-services architecture point, this also allows to decouple the responsabilties -- different teams, deployment schedule,...
 * Allow to fully leverage the internal payment gateway to implement more advanced things like payment routing, payment optimization, ... while keeping all this aspect hidden from core subscription/invoice engine
 * Different compliance scopes (SOX, PII, PCI, ...)
+
 
 ## Models
 
@@ -20,7 +23,7 @@ There are two main models that we can identify:
 1. The `KB-P` is used as a simple internal payment gateway but does not do any dynamic payment routing: In this model, each 
 `paymentMethod` associated with an `Account` in `KB-S` reflects the plugin that should be used (e.g `stripe`) on the `KB-P` side -- that is, the `pluginName` associated to each `paymentMethod` will correctly show `killbill-stripe` in this example.  The `KB-P` is completely transparent and really works as a proxy.
 
-2. In this second model, the `KB-P` is used as a dynamic payment gateway. It can route payments based on rules such as latency, errors, BIN-level optimization, business-level rules -- mimimum volume to meet contract terms, ... In this case, creating a `paymentMethod` associated with an `Account` in the `KB-S` will **not** create a matching  `paymentMethod` on the `KB-P` side; instead, the `bridge` will make initiate all the payment requests with a null `paymentMethodId` and rely on the control payment layer on the `KB-P` side to automatically to the payment routing.
+2. In this second model, the `KB-P` is used as a dynamic payment gateway. It can route payments based on rules such as latency, errors, BIN-level optimization, business-level rules -- mimimum volume to meet contract terms, ... In this case, creating a `paymentMethod` associated with an `Account` in the `KB-S` will **not** create a matching  `paymentMethod` on the `KB-P` side; instead, the `bridge` will initiate all the payment requests with a null `paymentMethodId` and rely on the control payment layer on the `KB-P` side to automatically do the payment routing.
 
 
 # Configuration
