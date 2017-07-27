@@ -18,12 +18,12 @@ The `KB-S` system will provide all the normal functionality, including payment o
 
 ## Models
 
-There are two main models that we can identify:
+There are two main models that we can identify, called respectively `proxy` and `proxy-routing` models:
 
-1. The `KB-P` is used as a simple internal payment gateway but does not do any dynamic payment routing: In this model, each 
+1. `proxy` model: The `KB-P` is used as a simple internal payment gateway but does not do any dynamic payment routing: In this model, each 
 `paymentMethod` associated with an `Account` in `KB-S` reflects the plugin that should be used (e.g `stripe`) on the `KB-P` side -- that is, the `pluginName` associated to each `paymentMethod` will correctly show `killbill-stripe` in this example.  The `KB-P` is completely transparent and really works as a proxy.
 
-2. In this second model, the `KB-P` is used as a dynamic payment gateway. It can route payments based on rules such as latency, errors, BIN-level optimization, business-level rules -- mimimum volume to meet contract terms, ... In this case, creating a `paymentMethod` associated with an `Account` in the `KB-S` will **not** create a matching  `paymentMethod` on the `KB-P` side; instead, the `bridge` will initiate all the payment requests with a null `paymentMethodId` and rely on the control payment layer on the `KB-P` side to automatically do the payment routing.
+2. `proxy-routing` model: In this second model, the `KB-P` is used as a dynamic payment gateway. It can route payments based on rules such as latency, errors, BIN-level optimization, business-level rules -- mimimum volume to meet contract terms, ... In this case, creating a `paymentMethod` associated with an `Account` in the `KB-S` will **not** create a matching  `paymentMethod` on the `KB-P` side; instead, the `bridge` will initiate all the payment requests with a null `paymentMethodId` and rely on the control payment layer on the `KB-P` side to automatically do the payment routing.
 
 
 # Configuration
@@ -52,6 +52,8 @@ In addition for each tenant, the details of the `api_key` and `api_secret` will 
 * `org.killbill.billing.plugin.bridge.internalPaymentMethodIdName` (Default to `internalPaymentMethodId`)
 
 # Internals
+
+
 
 
 
