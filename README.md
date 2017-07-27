@@ -65,8 +65,14 @@ Each KB system, `KB-S` and `KB-P` manages different objects entities (e.g `Accou
 * On the `Payment` and `Transaction` side, the bridge will also rely on the `externalKey`, similarly to what is done for `Account`.
 
 
+## Bridge Control Payment
+
+TBD
+
+## `internalPaymentMethodId`
 
 
+TBD
 
 
 
