@@ -23,10 +23,10 @@ public class TestConverterHelper {
         PaymentTransaction t2 = createPaymentTransaction(UUID.randomUUID());
         PaymentTransaction t3 = createPaymentTransaction(UUID.randomUUID());
 
-        final Optional<PaymentTransaction> result = ConverterHelper.getTransactionMatchOrLast(ImmutableList.of(t1, t2, t3), targetTransactionId);
+        final Optional<PaymentTransaction> result = ConverterHelper.getTransactionMatchOrLast(ImmutableList.of(t1, t2, t3), targetTransactionId.toString());
         Assert.assertTrue(result.isPresent());
         // We should default have found the target transaction
-        Assert.assertEquals(result.get().getTransactionId(), targetTransactionId);
+        Assert.assertEquals(result.get().getTransactionExternalKey(), targetTransactionId.toString());
     }
 
     @Test
@@ -37,7 +37,7 @@ public class TestConverterHelper {
         PaymentTransaction t2 = createPaymentTransaction(UUID.randomUUID());
         PaymentTransaction t3 = createPaymentTransaction(UUID.randomUUID());
 
-        final Optional<PaymentTransaction> result = ConverterHelper.getTransactionMatchOrLast(ImmutableList.of(t1, t2, t3), missingTargetTransactionId);
+        final Optional<PaymentTransaction> result = ConverterHelper.getTransactionMatchOrLast(ImmutableList.of(t1, t2, t3), missingTargetTransactionId.toString());
         Assert.assertTrue(result.isPresent());
         // We should default to last transaction
         Assert.assertEquals(result.get().getTransactionId(), t3.getTransactionId());
@@ -112,6 +112,7 @@ public class TestConverterHelper {
     private PaymentTransaction createPaymentTransaction(final UUID transactionId) {
         PaymentTransaction t = new PaymentTransaction();
         t.setTransactionId(transactionId);
+        t.setTransactionExternalKey(transactionId.toString());
         return t;
     }
 }

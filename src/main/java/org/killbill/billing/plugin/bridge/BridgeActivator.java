@@ -20,11 +20,14 @@ package org.killbill.billing.plugin.bridge;
 import org.killbill.billing.osgi.api.OSGIPluginProperties;
 import org.killbill.billing.osgi.libs.killbill.KillbillActivatorBase;
 import org.killbill.billing.payment.plugin.api.PaymentPluginApi;
+import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHandler;
 import org.killbill.billing.plugin.bridge.api.BridgePaymentPluginApi;
 import org.osgi.framework.BundleContext;
 
 import java.util.Hashtable;
 
+
+//TODO healtcheck
 public class BridgeActivator extends KillbillActivatorBase {
 
     public static final String PLUGIN_NAME = "killbill-bridge";
@@ -32,14 +35,19 @@ public class BridgeActivator extends KillbillActivatorBase {
     public static final String PROPERTY_PREFIX = "org.killbill.billing.plugin.bridge.";
 
 
+    private KillbillClientConfigurationHandler killbillClientConfigurationHandler;
+    private PaymentConfigurationHandler paymentConfigurationHandler;
+
     @Override
     public void start(final BundleContext context) throws Exception {
         super.start(context);
 
-        final BridgeConfigurationHandler configurationHandler = new BridgeConfigurationHandler(PLUGIN_NAME, killbillAPI, logService);
-
-        final BridgePaymentPluginApi api = new BridgePaymentPluginApi(configurationHandler);
+        killbillClientConfigurationHandler = new KillbillClientConfigurationHandler(PLUGIN_NAME, killbillAPI, logService);
+        paymentConfigurationHandler = new PaymentConfigurationHandler(PLUGIN_NAME, killbillAPI, logService);
+        final BridgePaymentPluginApi api = new BridgePaymentPluginApi(killbillAPI, killbillClientConfigurationHandler, paymentConfigurationHandler);
         registerPaymentPluginApi(context, api);
+
+        registerEventHandlers();
     }
 
 
@@ -47,6 +55,12 @@ public class BridgeActivator extends KillbillActivatorBase {
         final Hashtable<String, String> props = new Hashtable<String, String>();
         props.put(OSGIPluginProperties.PLUGIN_NAME_PROP, PLUGIN_NAME);
         registrar.registerService(context, PaymentPluginApi.class, api, props);
+    }
+
+    private void registerEventHandlers() {
+        final PluginConfigurationEventHandler pluginConfigurationEventHandler = new PluginConfigurationEventHandler(killbillClientConfigurationHandler,
+                paymentConfigurationHandler);
+        dispatcher.registerEventHandlers(pluginConfigurationEventHandler);
     }
 
 }

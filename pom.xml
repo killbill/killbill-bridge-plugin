@@ -250,6 +250,10 @@
                             javax.naming.ldap;
                             javax.naming.spi;
                             javax.naming;
+                            sun.misc;
+                            sun.misc.unsafe;
+                            sun.security;
+                            sun.security.util;
                             org.osgi.service.log;
                             version="[0,3)",
                             *;resolution:=optional
