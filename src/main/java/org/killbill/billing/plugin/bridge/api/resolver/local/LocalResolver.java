@@ -31,14 +31,19 @@ public class LocalResolver {
         }
     }
 
-
-    public String getAccountExternalKey(final UUID kbAccountId) throws PaymentPluginApiException {
+    public Account getAccount(final UUID kbAccountId) throws PaymentPluginApiException {
         try {
             final Account account = killbillAPI.getAccountUserApi().getAccountById(kbAccountId, tenantContext);
-            return account.getExternalKey();
+            return account;
         } catch (final AccountApiException e) {
             throw new PaymentPluginApiException(String.format("Failed to retrieve account %s", kbAccountId), e);
         }
+    }
+
+
+    public String getAccountExternalKey(final UUID kbAccountId) throws PaymentPluginApiException {
+        final Account account = getAccount(kbAccountId);
+        return account.getExternalKey();
     }
 
     public Payment getPayment(final UUID kbPaymentId) throws PaymentPluginApiException {

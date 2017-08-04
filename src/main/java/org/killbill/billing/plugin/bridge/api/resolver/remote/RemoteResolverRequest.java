@@ -34,13 +34,18 @@ public class RemoteResolverRequest {
         IGNORE_IF_MISSING
     }
 
-    public RemoteResolverRequest resolveAccount(final String accountExternalKey, final DefaultAction defaultAction)  {
-        if (accountExternalKey != null) {
-            requests.add(new Request(ResolvingType.ACCOUNT, accountExternalKey, (client, requestOptions, response) -> {
-                Account account = client.getAccount( accountExternalKey, requestOptions);
+    public RemoteResolverRequest resolveAccount(final org.killbill.billing.account.api.Account srcAccount, final DefaultAction defaultAction)  {
+        if (srcAccount.getExternalKey() != null) {
+            requests.add(new Request(ResolvingType.ACCOUNT, srcAccount.getExternalKey(), (client, requestOptions, response) -> {
+                Account account = client.getAccount( srcAccount.getExternalKey(), requestOptions);
                 if (defaultAction == DefaultAction.CREATE_IF_MISSING && account == null) {
                     final Account input = new Account();
-                    input.setExternalKey(accountExternalKey);
+                    input.setExternalKey(srcAccount.getExternalKey());
+                    input.setCountry(srcAccount.getCountry());
+                    input.setLocale(srcAccount.getLocale());
+                    if (srcAccount.getCurrency() != null) {
+                        input.setCurrency(srcAccount.getCurrency().toString());
+                    }
                     account = client.createAccount(input, requestOptions);
                 }
                 response.setAccountIdMapping(account.getAccountId());

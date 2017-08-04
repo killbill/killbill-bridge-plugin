@@ -2,6 +2,7 @@ package org.killbill.billing.plugin.bridge.api;
 
 import com.google.common.base.Preconditions;
 import com.ning.http.client.Response;
+import org.killbill.billing.account.api.Account;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.client.KillBillClient;
 import org.killbill.billing.client.KillBillClientException;
@@ -206,7 +207,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi, Closeable {
         if (paymentConfig.getProxyModel() == PaymentProxyModel.PROXY_SIMPLE) {
 
             final LocalResolver localResolver = new LocalResolver(killbillAPI, context);
-            final String accountExternalKey = localResolver.getAccountExternalKey(kbAccountId);
+            final Account account = localResolver.getAccount(kbAccountId);
             final String pmExternalKey = localResolver.getPaymentMethodExternalKey(kbPaymentMethodId);
 
             internalPaymentTransactionOperation(new ClientOperation<Void>(null, null, null, "DELETE_PAYMENT_METHOD") {
@@ -215,7 +216,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi, Closeable {
 
                                                         final RemoteResolver resolver = new RemoteResolver(client, requestOptions);
                                                         final RemoteResolverResponse resolverResp = resolver.resolve(new RemoteResolverRequest()
-                                                                .resolveAccount(accountExternalKey, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING)
+                                                                .resolveAccount(account, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING)
                                                                 .resolvePM(pmExternalKey, RemoteResolverRequest.DefaultAction.IGNORE_IF_MISSING));
                                                         client.updateDefaultPaymentMethod(resolverResp.getAccountIdMapping(), resolverResp.getPaymentMethodIdMapping(), requestOptions);
                                                         return null;
@@ -232,14 +233,14 @@ public class BridgePaymentPluginApi implements PaymentPluginApi, Closeable {
         if (paymentConfig.getProxyModel() == PaymentProxyModel.PROXY_SIMPLE) {
 
             final LocalResolver localResolver = new LocalResolver(killbillAPI, context);
-            final String accountExternalKey = localResolver.getAccountExternalKey(kbAccountId);
+            final Account account = localResolver.getAccount(kbAccountId);
 
             return internalPaymentTransactionOperation(new ClientOperation<org.killbill.billing.client.model.PaymentMethods>(kbAccountId, null, null, "GET_ACCOUNT_PAYMENT_METHODS") {
                                                            @Override
                                                            public org.killbill.billing.client.model.PaymentMethods doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException {
                                                                final RemoteResolver resolver = new RemoteResolver(client, requestOptions);
                                                                final RemoteResolverResponse resolverResp = resolver.resolve(new RemoteResolverRequest()
-                                                                       .resolveAccount(accountExternalKey, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING));
+                                                                       .resolveAccount(account, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING));
                                                                return client.getPaymentMethodsForAccount(resolverResp.getAccountIdMapping(), ConverterHelper.convertToClientMapPluginProperties(properties), true, AuditLevel.NONE, requestOptions);
                                                            }
                                                        },
@@ -265,7 +266,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi, Closeable {
     public HostedPaymentPageFormDescriptor buildFormDescriptor(final UUID kbAccountId, final Iterable<PluginProperty> customFields, final Iterable<PluginProperty> properties, final CallContext context) throws PaymentPluginApiException {
 
         final LocalResolver localResolver = new LocalResolver(killbillAPI, context);
-        final String accountExternalKey = localResolver.getAccountExternalKey(kbAccountId);
+        final Account account = localResolver.getAccount(kbAccountId);
 
         return internalPaymentTransactionOperation(new ClientOperation<org.killbill.billing.client.model.HostedPaymentPageFormDescriptor>(kbAccountId, null, null, "BUILD_FORM_DESC") {
                                                        @Override
@@ -273,7 +274,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi, Closeable {
 
                                                            final RemoteResolver resolver = new RemoteResolver(client, requestOptions);
                                                            final RemoteResolverResponse resolverResp = resolver.resolve(new RemoteResolverRequest()
-                                                                   .resolveAccount(accountExternalKey, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING));
+                                                                   .resolveAccount(account, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING));
 
                                                            final org.killbill.billing.client.model.HostedPaymentPageFields fields = new org.killbill.billing.client.model.HostedPaymentPageFields(ConverterHelper.convertToClientListPluginProperties(customFields));
                                                            return client.buildFormDescriptor(fields, resolverResp.getAccountIdMapping(), null /* TODO ??? */, ConverterHelper.convertToClientMapPluginProperties(properties), requestOptions);
@@ -320,9 +321,9 @@ public class BridgePaymentPluginApi implements PaymentPluginApi, Closeable {
             public org.killbill.billing.client.model.PaymentTransaction doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException, PaymentPluginApiException {
 
                 final RemoteResolver resolver = new RemoteResolver(client, requestOptions);
-                final String accountExternalKey = localResolver.getAccountExternalKey(kbAccountId);
+                final Account account = localResolver.getAccount(kbAccountId);
                 final RemoteResolverResponse resolverResp = resolver.resolve(new RemoteResolverRequest()
-                        .resolveAccount(accountExternalKey, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING)
+                        .resolveAccount(account, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING)
                         // TODO not required in proxy-routing model
                         //.resolvePM(kbPaymentMethodId, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING)
                         .resolvePaymentTransaction(payment.getExternalKey(), paymentTransaction.getExternalKey(), RemoteResolverRequest.DefaultAction.IGNORE_IF_MISSING));
