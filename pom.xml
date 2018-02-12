@@ -21,7 +21,7 @@
     <parent>
         <artifactId>killbill-oss-parent</artifactId>
         <groupId>org.kill-bill.billing</groupId>
-        <version>0.141.5-SNAPSHOT</version>
+        <version>0.141.28</version>
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>bridge-plugin</artifactId>
@@ -39,6 +39,11 @@
         <system>Github</system>
         <url>https://github.com/killbill/killbill-bridge-plugin/issues</url>
     </issueManagement>
+    <properties>
+        <!-- More recent versions than the core (JDK1.8+) -->
+        <guava.version>21.0</guava.version>
+        <jackson.version>2.9.2</jackson.version>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
@@ -170,6 +175,11 @@
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.18</version>
         </dependency>
     </dependencies>
     <build>
