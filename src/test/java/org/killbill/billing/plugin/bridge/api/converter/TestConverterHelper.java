@@ -31,7 +31,7 @@ import java.util.UUID;
 public class TestConverterHelper {
 
 
-    @Test
+    @Test(groups = "fast")
     public void testFindTransactionWithTarget() {
 
         //
@@ -46,7 +46,7 @@ public class TestConverterHelper {
         Assert.assertEquals(result.get().getTransactionExternalKey(), targetTransactionId.toString());
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testFindTransactionWithMissingTarget() {
 
         final UUID missingTargetTransactionId = UUID.randomUUID();
@@ -61,7 +61,7 @@ public class TestConverterHelper {
     }
 
 
-    @Test
+    @Test(groups = "fast")
     public void testFindTransactionWithNullTarget() {
         PaymentTransaction t1 = createPaymentTransaction(UUID.randomUUID());
         PaymentTransaction t2 = createPaymentTransaction(UUID.randomUUID());
@@ -73,19 +73,19 @@ public class TestConverterHelper {
         Assert.assertEquals(result.get().getTransactionId(), t3.getTransactionId());
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testConvertToApiPluginPropertiesWithNullProperties() {
         Assert.assertEquals(ConverterHelper.convertToApiPluginProperties((List) null).size(), 0);
     }
 
 
-    @Test
+    @Test(groups = "fast")
     public void testConvertToApiPluginPropertiesWithEmptyProperties() {
         Assert.assertEquals(ConverterHelper.convertToApiPluginProperties(ImmutableList.of()).size(), 0);
     }
 
 
-    @Test
+    @Test(groups = "fast")
     public void testConvertToApiPluginPropertiesWithExistingProperties() {
         final org.killbill.billing.client.model.PluginProperty p1 = new org.killbill.billing.client.model.PluginProperty("keyA", "valueA", true);
         final org.killbill.billing.client.model.PluginProperty p2 = new org.killbill.billing.client.model.PluginProperty("keyB", "valueB", true);
@@ -101,18 +101,18 @@ public class TestConverterHelper {
         Assert.assertEquals(result.get(1).getIsUpdatable(), p2.getIsUpdatable());
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testConvertToClientPluginPropertiesWithNullProperties() {
         Assert.assertEquals(ConverterHelper.convertToClientListPluginProperties(null).size(), 0);
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testConvertToClientPluginPropertiesWithEmptyProperties() {
         Assert.assertEquals(ConverterHelper.convertToClientListPluginProperties(null).size(), 0);
     }
 
 
-    @Test
+    @Test(groups = "fast")
     public void testConvertToClientPluginPropertiesWithExistingProperties() {
 
         final PluginProperty p1 = new PluginProperty("keyA", "valueA", true);
