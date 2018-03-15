@@ -44,7 +44,7 @@ public class BridgeActivator extends KillbillActivatorBase {
 
         killbillClientConfigurationHandler = new KillbillClientConfigurationHandler(PLUGIN_NAME, killbillAPI, logService);
         paymentConfigurationHandler = new PaymentConfigurationHandler(PLUGIN_NAME, killbillAPI, logService);
-        final BridgePaymentPluginApi api = new BridgePaymentPluginApi(killbillAPI, killbillClientConfigurationHandler, paymentConfigurationHandler);
+        final BridgePaymentPluginApi api = new BridgePaymentPluginApi(killbillAPI, logService, killbillClientConfigurationHandler, paymentConfigurationHandler);
         registerPaymentPluginApi(context, api);
 
         registerEventHandlers();

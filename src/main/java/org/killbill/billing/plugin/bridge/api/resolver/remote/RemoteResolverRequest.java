@@ -86,7 +86,6 @@ public class RemoteResolverRequest {
 
     public RemoteResolverRequest resolvePayment(final String paymentExternalKey, final DefaultAction defaultAction) {
 
-        Preconditions.checkState(defaultAction == DefaultAction.IGNORE_IF_MISSING);
         if (paymentExternalKey != null) {
             requests.add(new Request(ResolvingType.PAYMENT, paymentExternalKey, (client, requestOptions, response) -> {
                 final Payment payment = client.getPaymentByExternalKey(paymentExternalKey, requestOptions);
@@ -100,7 +99,6 @@ public class RemoteResolverRequest {
 
     public RemoteResolverRequest resolvePaymentTransaction(final String paymentExternalKey, final String transactionExternalKey, final DefaultAction defaultAction) {
 
-        Preconditions.checkState(defaultAction == DefaultAction.IGNORE_IF_MISSING);
         if (paymentExternalKey != null) {
             if (transactionExternalKey != null) {
                 requests.add(new Request(ResolvingType.PAYMENT_AND_TRANSACTION, paymentExternalKey, (client, requestOptions, response) -> {
