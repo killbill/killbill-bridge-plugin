@@ -44,6 +44,7 @@ import org.killbill.billing.payment.plugin.api.PaymentMethodInfoPlugin;
 import org.killbill.billing.payment.plugin.api.PaymentPluginApi;
 import org.killbill.billing.payment.plugin.api.PaymentPluginApiException;
 import org.killbill.billing.payment.plugin.api.PaymentTransactionInfoPlugin;
+import org.killbill.billing.plugin.api.PluginProperties;
 import org.killbill.billing.plugin.bridge.KillbillClientConfigurationHandler;
 import org.killbill.billing.plugin.bridge.PaymentConfig;
 import org.killbill.billing.plugin.bridge.PaymentConfigurationHandler;
@@ -315,7 +316,12 @@ public class BridgePaymentPluginApi implements PaymentPluginApi, Closeable {
         }
     }
 
-    private PaymentTransactionInfoPlugin internalPaymentTransactionOperation(final TransactionType transactionType, final UUID kbAccountId, final UUID kbPaymentId, final UUID kbTransactionId, final UUID kbPaymentMethodId, @Nullable final BigDecimal amount, @Nullable final Currency currency, final Iterable<PluginProperty> properties, final CallContext context) throws PaymentPluginApiException {
+    private Iterable<PluginProperty> buildProperties(final Iterable<PluginProperty> originalProperties, final TenantContext context) {
+        final PaymentConfig paymentConfig = paymentConfigurationHandler.getConfigurable(context.getTenantId());
+        return PluginProperties.merge(paymentConfig.getPluginProperties(), originalProperties);
+    }
+
+    private PaymentTransactionInfoPlugin internalPaymentTransactionOperation(final TransactionType transactionType, final UUID kbAccountId, final UUID kbPaymentId, final UUID kbTransactionId, final UUID kbPaymentMethodId, @Nullable final BigDecimal amount, @Nullable final Currency currency, final Iterable<PluginProperty> originalProperties, final CallContext context) throws PaymentPluginApiException {
 
         logService.log(LogService.LOG_INFO, String.format("Bridge Payment ENTERING: transactionType='%s', kbAccountId='%s', kbPaymentId='%s', kbPaymentMethodId='%s', amount='%s', currency='%s'",
                                                           transactionType, kbAccountId, kbPaymentId, kbPaymentMethodId, amount, currency));
@@ -363,6 +369,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi, Closeable {
                     transaction.setCurrency(currency.toString());
                 }
 
+                final Iterable<PluginProperty> properties = buildProperties(originalProperties, context);
                 final org.killbill.billing.client.model.Payment result;
                 switch (transactionType) {
                     case AUTHORIZE:

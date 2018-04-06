@@ -51,6 +51,7 @@ Thw following properties are supported:
 * `org.killbill.billing.plugin.bridge.SSLProtocol` (Optional)
 * `org.killbill.billing.plugin.bridge.internalPaymentMethodIdName` (Default to `internalPaymentMethodId`)
 * `org.killbill.billing.plugin.bridge.controlPlugins` (Optional) 
+* `org.killbill.billing.plugin.bridge.pluginProperties` (Optional)
 
 
 # Internals
