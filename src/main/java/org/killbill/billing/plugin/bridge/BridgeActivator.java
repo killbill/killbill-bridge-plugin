@@ -22,6 +22,7 @@ import org.killbill.billing.osgi.libs.killbill.KillbillActivatorBase;
 import org.killbill.billing.payment.plugin.api.PaymentPluginApi;
 import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHandler;
 import org.killbill.billing.plugin.bridge.api.BridgePaymentPluginApi;
+import org.killbill.billing.plugin.core.config.PluginEnvironmentConfig;
 import org.osgi.framework.BundleContext;
 
 import java.util.Hashtable;
@@ -42,8 +43,10 @@ public class BridgeActivator extends KillbillActivatorBase {
     public void start(final BundleContext context) throws Exception {
         super.start(context);
 
-        killbillClientConfigurationHandler = new KillbillClientConfigurationHandler(PLUGIN_NAME, killbillAPI, logService);
-        paymentConfigurationHandler = new PaymentConfigurationHandler(PLUGIN_NAME, killbillAPI, logService);
+        final String region = PluginEnvironmentConfig.getRegion(configProperties.getProperties());
+
+        killbillClientConfigurationHandler = new KillbillClientConfigurationHandler(PLUGIN_NAME, killbillAPI, logService, region);
+        paymentConfigurationHandler = new PaymentConfigurationHandler(PLUGIN_NAME, killbillAPI, logService, region);
         final BridgePaymentPluginApi api = new BridgePaymentPluginApi(killbillAPI, logService, killbillClientConfigurationHandler, paymentConfigurationHandler);
         registerPaymentPluginApi(context, api);
 

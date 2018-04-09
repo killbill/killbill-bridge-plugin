@@ -34,25 +34,58 @@ and another Kill Bill system operating for handling payments.
 The plugin will need to have the default configuration parameter to connect to the remote Kill Bill (payment) system.
 In addition for each tenant, the details of the `api_key` and `api_secret` will be required.
 
-Thw following properties are supported:
+Here's a configuration example:
 
-* `org.killbill.billing.plugin.bridge.serverHost`
-* `org.killbill.billing.plugin.bridge.serverPort`
-* `org.killbill.billing.plugin.bridge.username`
-* `org.killbill.billing.plugin.bridge.password`
-* `org.killbill.billing.plugin.bridge.apiKey`
-* `org.killbill.billing.plugin.bridge.apiSecret`
-* `org.killbill.billing.plugin.bridge.proxyHost` (Optional)
-* `org.killbill.billing.plugin.bridge.proxyPort` (Optional)
-* `org.killbill.billing.plugin.bridge.connectTimeOut` (Optional)
-* `org.killbill.billing.plugin.bridge.readTimeOut` (Optional)
-* `org.killbill.billing.plugin.bridge.requestTimeout` (Optional)
-* `org.killbill.billing.plugin.bridge.strictSSL` (Optional)
-* `org.killbill.billing.plugin.bridge.SSLProtocol` (Optional)
-* `org.killbill.billing.plugin.bridge.internalPaymentMethodIdName` (Default to `internalPaymentMethodId`)
-* `org.killbill.billing.plugin.bridge.controlPlugins` (Optional) 
-* `org.killbill.billing.plugin.bridge.pluginProperties` (Optional)
+```
+!!org.killbill.billing.plugin.bridge.BridgeConfig
+killbillClientConfig:
+  serverUrl: http://127.0.0.1:8080
+  username: admin
+  password: password
+  apiKey: bob
+  apiSecret: lazar
+  # All other properties are optional
+  proxyUrl:
+  connectTimeOut:
+  readTimeOut:
+  requestTimeout:
+  strictSSL:
+  SSLProtocol:
+paymentConfig:
+  proxyModel: proxy
+  # Defaults to internalPaymentMethodId
+  internalPaymentMethodIdName:
+  controlPlugins:
+  pluginProperties:
+```
 
+In case you have a multi-regions deployment:
+
+```
+local: !!org.killbill.billing.plugin.bridge.BridgeConfig
+  killbillClientConfig:
+    &killbillClientConfigDefault
+    username: admin
+    password: password
+    apiKey: bob
+    apiSecret: lazar
+  paymentConfig:
+    &paymentConfigDefault
+
+eu-central-1: !!org.killbill.billing.plugin.bridge.BridgeConfig
+  killbillClientConfig:
+    <<: *killbillClientConfigDefault
+    serverUrl: http://kb.eu:8080
+  paymentConfig:
+    <<: *paymentConfigDefault
+
+ap-northeast-2: !!org.killbill.billing.plugin.bridge.BridgeConfig
+  killbillClientConfig:
+    <<: *killbillClientConfigDefault
+    serverUrl: http://kb.apac:8080
+  paymentConfig:
+    <<: *paymentConfigDefault
+```
 
 # Internals
 

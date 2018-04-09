@@ -17,16 +17,8 @@
 
 package org.killbill.billing.plugin.bridge;
 
-import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
-import org.killbill.billing.osgi.libs.killbill.OSGIKillbillLogService;
-import org.killbill.billing.plugin.core.config.YAMLPluginTenantConfigurationHandler;
+public class BridgeConfig {
 
-public class PaymentConfigurationHandler extends YAMLPluginTenantConfigurationHandler<PaymentConfig, PaymentConfig> {
-
-    public PaymentConfigurationHandler(final String pluginName,
-                                       final OSGIKillbillAPI osgiKillbillAPI,
-                                       final OSGIKillbillLogService osgiKillbillLogService,
-                                       final String region) {
-        super(pluginName, osgiKillbillAPI, osgiKillbillLogService, region);
-    }
+    public KillbillClientConfig killbillClientConfig;
+    public PaymentConfig paymentConfig;
 }

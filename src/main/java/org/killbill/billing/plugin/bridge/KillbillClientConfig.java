@@ -17,16 +17,19 @@
 
 package org.killbill.billing.plugin.bridge;
 
-import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
-import org.killbill.billing.osgi.libs.killbill.OSGIKillbillLogService;
-import org.killbill.billing.plugin.core.config.YAMLPluginTenantConfigurationHandler;
+import java.net.URL;
 
-public class PaymentConfigurationHandler extends YAMLPluginTenantConfigurationHandler<PaymentConfig, PaymentConfig> {
+public class KillbillClientConfig {
 
-    public PaymentConfigurationHandler(final String pluginName,
-                                       final OSGIKillbillAPI osgiKillbillAPI,
-                                       final OSGIKillbillLogService osgiKillbillLogService,
-                                       final String region) {
-        super(pluginName, osgiKillbillAPI, osgiKillbillLogService, region);
-    }
+    public URL serverUrl;
+    public String username;
+    public String password;
+    public String apiKey;
+    public String apiSecret;
+    public URL proxyUrl;
+    public Integer connectTimeOut;
+    public Integer readTimeOut;
+    public Integer requestTimeout;
+    public Boolean strictSSL;
+    public String SSLProtocol;
 }
