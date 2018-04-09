@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,11 +17,11 @@
 
 package org.killbill.billing.plugin.bridge;
 
+import java.util.Properties;
+
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillLogService;
 import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
-
-import java.util.Properties;
 
 import static org.killbill.billing.plugin.bridge.PaymentProxyModel.PROXY_ROUTING;
 
@@ -36,6 +36,7 @@ public class PaymentConfigurationHandler extends PluginTenantConfigurableConfigu
         final String internalPaymentMethodIdName = properties.getProperty(BridgeActivator.PROPERTY_PREFIX + "internalPaymentMethodIdName", "internalPaymentMethodId");
         final String proxyModel = properties.getProperty(BridgeActivator.PROPERTY_PREFIX + "proxyModel", PROXY_ROUTING.getName());
         final String controlPluginList = properties.getProperty(BridgeActivator.PROPERTY_PREFIX + "controlPlugins", null);
-        return new PaymentConfig(proxyModel, internalPaymentMethodIdName, controlPluginList);
+        final String pluginPropertiesList = properties.getProperty(BridgeActivator.PROPERTY_PREFIX + "pluginProperties", null);
+        return new PaymentConfig(proxyModel, internalPaymentMethodIdName, controlPluginList, pluginPropertiesList);
     }
 }
