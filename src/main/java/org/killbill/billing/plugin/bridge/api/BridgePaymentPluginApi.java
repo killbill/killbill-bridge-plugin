@@ -72,7 +72,7 @@ import com.google.common.base.Preconditions;
 
 // NOTE: We explicitly import 'org.killbill.billing.client.model.*' objects to avoid confusing api and client model -- which often have the same name
 
-public class BridgePaymentPluginApi implements PaymentPluginApi, Closeable {
+public class BridgePaymentPluginApi implements PaymentPluginApi {
 
     protected static final String createdBy = "BridgePaymentPluginApi";
     protected static final String reason = null;
@@ -94,11 +94,6 @@ public class BridgePaymentPluginApi implements PaymentPluginApi, Closeable {
         this.paymentConfigurationHandler = paymentConfigurationHandler;
         this.killbillAPI = killbillAPI;
         this.logService = logService;
-    }
-
-    @Override
-    public void close() throws IOException {
-        configurationHandler.close();
     }
 
     @Override

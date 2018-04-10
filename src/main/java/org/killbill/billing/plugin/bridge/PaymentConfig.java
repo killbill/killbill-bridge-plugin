@@ -17,41 +17,18 @@
 
 package org.killbill.billing.plugin.bridge;
 
-import java.util.LinkedList;
 import java.util.List;
-
-import javax.annotation.Nullable;
+import java.util.Map;
 
 import org.killbill.billing.payment.api.PluginProperty;
-
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
+import org.killbill.billing.plugin.api.PluginProperties;
 
 public class PaymentConfig {
 
-    private static final Splitter PIPE_SPLITTER = Splitter.on("|");
-    private static final Splitter HASH_SPLITTER = Splitter.on("#");
-    private static final Joiner HASH_JOINER = Joiner.on("#");
-
-    private final PaymentProxyModel proxyModel;
-    private final String internalPaymentMethodIdName;
-    private final List<String> controlPlugins;
-    private final List<PluginProperty> pluginProperties = new LinkedList<PluginProperty>();
-
-    public PaymentConfig(final String proxyModel, final String internalPaymentMethodIdName, @Nullable final String controlPluginList, @Nullable final String pluginPropertiesList) {
-        this.internalPaymentMethodIdName = internalPaymentMethodIdName;
-        this.proxyModel = PaymentProxyModel.findPaymentProxyModel(proxyModel);
-        this.controlPlugins = controlPluginList != null ? ImmutableList.copyOf(controlPluginList.split(",\\s*")) : ImmutableList.of();
-        if (pluginPropertiesList != null) {
-            for (final String pluginPropertyPair : PIPE_SPLITTER.split(pluginPropertiesList)) {
-                final List<String> pluginPropertyParts = ImmutableList.<String>copyOf(HASH_SPLITTER.split(pluginPropertyPair));
-                if (pluginPropertyParts.size() > 1) {
-                    pluginProperties.add(new PluginProperty(pluginPropertyParts.get(0), HASH_JOINER.join(pluginPropertyParts.subList(1, pluginPropertyParts.size())), false));
-                }
-            }
-        }
-    }
+    public PaymentProxyModel proxyModel;
+    public String internalPaymentMethodIdName;
+    public List<String> controlPlugins;
+    public Map pluginProperties;
 
     public PaymentProxyModel getProxyModel() {
         return proxyModel;
@@ -66,6 +43,6 @@ public class PaymentConfig {
     }
 
     public List<PluginProperty> getPluginProperties() {
-        return pluginProperties;
+        return PluginProperties.buildPluginProperties(pluginProperties);
     }
 }

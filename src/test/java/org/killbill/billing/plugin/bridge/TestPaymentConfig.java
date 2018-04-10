@@ -20,30 +20,23 @@ package org.killbill.billing.plugin.bridge;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import com.google.common.collect.ImmutableMap;
+
 public class TestPaymentConfig {
 
     @Test(groups = "fast")
     public void testParsePluginProperties() {
-        PaymentConfig paymentConfig = new PaymentConfig("proxy", null, null, null);
+        PaymentConfig paymentConfig = new PaymentConfig();
         Assert.assertTrue(paymentConfig.getPluginProperties().isEmpty());
 
-        paymentConfig = new PaymentConfig("proxy", null, null, "");
-        Assert.assertTrue(paymentConfig.getPluginProperties().isEmpty());
-
-        paymentConfig = new PaymentConfig("proxy", null, null, "abcd");
-        Assert.assertTrue(paymentConfig.getPluginProperties().isEmpty());
-
-        paymentConfig = new PaymentConfig("proxy", null, null, "a#bcd");
+        paymentConfig = new PaymentConfig();
+        paymentConfig.pluginProperties = ImmutableMap.<String, String>of("a", "bcd");
         Assert.assertEquals(paymentConfig.getPluginProperties().size(), 1);
         Assert.assertEquals(paymentConfig.getPluginProperties().get(0).getKey(), "a");
         Assert.assertEquals(paymentConfig.getPluginProperties().get(0).getValue(), "bcd");
 
-        paymentConfig = new PaymentConfig("proxy", null, null, "a#b#cd");
-        Assert.assertEquals(paymentConfig.getPluginProperties().size(), 1);
-        Assert.assertEquals(paymentConfig.getPluginProperties().get(0).getKey(), "a");
-        Assert.assertEquals(paymentConfig.getPluginProperties().get(0).getValue(), "b#cd");
-
-        paymentConfig = new PaymentConfig("proxy", null, null, "a#bcd|e#{\"value\": \"New\", \"onclick\": \"CreateNewDoc()\"}");
+        paymentConfig = new PaymentConfig();
+        paymentConfig.pluginProperties = ImmutableMap.<String, String>of("a", "bcd", "e", "{\"value\": \"New\", \"onclick\": \"CreateNewDoc()\"}");
         Assert.assertEquals(paymentConfig.getPluginProperties().size(), 2);
         Assert.assertEquals(paymentConfig.getPluginProperties().get(0).getKey(), "a");
         Assert.assertEquals(paymentConfig.getPluginProperties().get(0).getValue(), "bcd");

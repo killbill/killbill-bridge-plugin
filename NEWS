@@ -1,4 +1,13 @@
+0.0.4
+    config: add option for passing default plugin properties
+    config: switch to YAML format and add multi-regions support
+    Update to killbill-oss-parent 0.141.54
+
+0.0.3
+    NPE fix in BridgePaymentPluginApi.getPaymentInfo
+
+0.0.2
+    Update to killbill-oss-parent 0.141.44
+
 0.0.1
     Initial release
-
-
