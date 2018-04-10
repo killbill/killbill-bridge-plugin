@@ -1,3 +1,6 @@
+0.0.5
+    config: fix PaymentConfig parsing
+
 0.0.4
     config: add option for passing default plugin properties
     config: switch to YAML format and add multi-regions support
