@@ -21,12 +21,17 @@ import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillLogService;
 import org.killbill.billing.plugin.core.config.YAMLPluginTenantConfigurationHandler;
 
-public class PaymentConfigurationHandler extends YAMLPluginTenantConfigurationHandler<PaymentConfig, PaymentConfig> {
+public class PaymentConfigurationHandler extends YAMLPluginTenantConfigurationHandler<BridgeConfig, PaymentConfig> {
 
     public PaymentConfigurationHandler(final String pluginName,
                                        final OSGIKillbillAPI osgiKillbillAPI,
                                        final OSGIKillbillLogService osgiKillbillLogService,
                                        final String region) {
         super(pluginName, osgiKillbillAPI, osgiKillbillLogService, region);
+    }
+
+    @Override
+    protected PaymentConfig createConfigurable(final BridgeConfig configObject) {
+        return configObject.paymentConfig;
     }
 }
