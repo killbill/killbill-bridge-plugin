@@ -1,3 +1,6 @@
+0.0.6
+    Improvements around exceptions handlings and better logging
+
 0.0.5
     config: fix PaymentConfig parsing
 
