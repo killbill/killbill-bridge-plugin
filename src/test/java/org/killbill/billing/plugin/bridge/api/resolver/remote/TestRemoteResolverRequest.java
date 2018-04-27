@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
 
 public class TestRemoteResolverRequest {
 
-    @Test
+    @Test(groups = "fast")
     public void testResolveExistingAccount() throws KillBillClientException, UnresolvedException {
 
         final RemoteResolverRequest remoteResolverRequest = new RemoteResolverRequest();
@@ -56,7 +56,7 @@ public class TestRemoteResolverRequest {
         Assert.assertEquals(resolverResp.getAccountIdMapping(), accountId);
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testCreateAndResoleAccount() throws KillBillClientException, UnresolvedException {
 
         final RemoteResolverRequest remoteResolverRequest = new RemoteResolverRequest();
@@ -79,7 +79,7 @@ public class TestRemoteResolverRequest {
         Assert.assertEquals(resolverResp.getAccountIdMapping(), accountId);
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testResolveAccountWithKillBillClientException() throws KillBillClientException, UnresolvedException {
 
         final RemoteResolverRequest remoteResolverRequest = new RemoteResolverRequest();
@@ -108,7 +108,7 @@ public class TestRemoteResolverRequest {
         Assert.assertTrue(gotKillBillClientException);
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testResolveExistingPaymentMethod() throws KillBillClientException, UnresolvedException {
 
         final RemoteResolverRequest remoteResolverRequest = new RemoteResolverRequest();
@@ -128,7 +128,7 @@ public class TestRemoteResolverRequest {
         Assert.assertEquals(resolverResp.getPaymentMethodIdMapping(), pmId);
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testResolveMissingPaymentMethod() throws KillBillClientException, UnresolvedException {
 
         final RemoteResolverRequest remoteResolverRequest = new RemoteResolverRequest();
@@ -150,7 +150,7 @@ public class TestRemoteResolverRequest {
         Assert.assertTrue(gotUnresolved);
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testResolveExistingPayment() throws KillBillClientException, UnresolvedException {
 
         final RemoteResolverRequest remoteResolverRequest = new RemoteResolverRequest();
@@ -170,7 +170,7 @@ public class TestRemoteResolverRequest {
         Assert.assertEquals(resolverResp.getPaymentIdMapping(), paymentId);
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testResolveUnresolvedPayment() throws KillBillClientException, UnresolvedException {
 
         final RemoteResolverRequest remoteResolverRequest = new RemoteResolverRequest();
@@ -195,7 +195,7 @@ public class TestRemoteResolverRequest {
         Assert.assertTrue(gotUnresolved);
     }
 
-    @Test
+    @Test(groups = "fast")
     public void testResolveWithRuntimeException() throws KillBillClientException, UnresolvedException {
 
         final RemoteResolverRequest remoteResolverRequest = new RemoteResolverRequest();

@@ -44,20 +44,19 @@ public class RemoteResolver {
                .stream()
                .forEachOrdered(r -> {
                    boolean resolved = false;
-                   WrappedKillBillClientException clientException = null;
                    try {
                        r.resolve(client, requestOptions, result);
                        resolved = true;
                    } catch (final KillBillClientException e) {
-                       logger.warn(String.format("RemoteResolver [%d]: KillBillClientException...", request.getRequestId()), e);
+                       logger.warn("RemoteResolver {}: KillBillClientException...", request.getRequestId(), e);
                        throw new  WrappedKillBillClientException(e);
                    } catch (final UnresolvedException e) {
-                       logger.warn(String.format("RemoteResolver [%d]: UnresolvedException...", request.getRequestId()), e);
+                       logger.warn("RemoteResolver {}: UnresolvedException...", request.getRequestId(), e);
                        throw new WrappedUnresolvedException(e.getMessage());
                    } finally {
                        if (resolved) {
-                           logger.info(String.format("RemoteResolver [%d]: type='%s', id='%s' -> resolvedId='%s'",
-                                                     request.getRequestId(), r.getType(), r.getSrcKey(), result.getMapping(r.getType())));
+                           logger.info("RemoteResolver {}: type='{}', id='{}' -> resolvedId='{}'",
+                                                     request.getRequestId(), r.getType(), r.getSrcKey(), result.getMapping(r.getType()));
                        }
                    }
                });

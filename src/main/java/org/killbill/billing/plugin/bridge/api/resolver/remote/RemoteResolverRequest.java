@@ -69,7 +69,7 @@ public class RemoteResolverRequest {
                 if (account.getAccountId() != null) {
                     response.setAccountIdMapping(account.getAccountId());
                 } else {
-                    throw new UnresolvedException(String.format("Failed to resolve account id='%s'", srcAccount.getExternalKey()));
+                    throw new UnresolvedException(String.format("Failed to resolve account externalKey='%s'", srcAccount.getExternalKey()));
                 }
             }));
         }
@@ -84,7 +84,7 @@ public class RemoteResolverRequest {
                 if (pm != null) {
                     response.setPaymentMethodIdMapping(pm.getPaymentMethodId());
                 } else {
-                    throw new UnresolvedException(String.format("Failed to resolve payment method id='%s'", pmExternalKey));
+                    throw new UnresolvedException(String.format("Failed to resolve payment method externalKey='%s'", pmExternalKey));
                 }
             }));
         }
@@ -99,7 +99,7 @@ public class RemoteResolverRequest {
                 if (payment != null) {
                     response.setPaymentIdMapping(payment.getPaymentId());
                 } else {
-                    throw new UnresolvedException(String.format("Failed to resolve payment  id='%s'", paymentExternalKey));
+                    throw new UnresolvedException(String.format("Failed to resolve payment externalKey='%s'", paymentExternalKey));
                 }
             }));
         }
@@ -120,7 +120,7 @@ public class RemoteResolverRequest {
                         if (transaction.isPresent()) {
                             response.setTransactionIdMapping(transaction.get().getTransactionId());
                         } else {
-                            throw new UnresolvedException(String.format("Failed to resolve payment transaction id='%s'", transactionExternalKey));
+                            throw new UnresolvedException(String.format("Failed to resolve payment transaction externalKey='%s'", transactionExternalKey));
                         }
                     }
                 }));

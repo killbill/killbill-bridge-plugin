@@ -228,7 +228,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
             final Account account = localResolver.getAccount(kbAccountId);
             final String pmExternalKey = localResolver.getPaymentMethodExternalKey(kbPaymentMethodId);
 
-            internalGenericPaymentTransactionOperation(new ClientOperation<Void>(null, null, null, "DELETE_PAYMENT_METHOD") {
+            internalGenericPaymentTransactionOperation(new ClientOperation<Void>(null, null, null, "SET_DEFAULT_PAYMENT_METHOD") {
                                                            @Override
                                                            public Void doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException, UnresolvedException {
 
