@@ -20,6 +20,7 @@ package org.killbill.billing.plugin.bridge.api.resolver.remote;
 import org.killbill.billing.client.KillBillClient;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.RequestOptions;
+import org.killbill.billing.plugin.bridge.api.resolver.remote.RemoteResolverRequest.UnresolvedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,20 +38,43 @@ public class RemoteResolver {
     }
 
     // TODO We could execute some requests in parallel -- exercise for the reader...
-    public RemoteResolverResponse resolve(final RemoteResolverRequest request) {
+    public RemoteResolverResponse resolve(final RemoteResolverRequest request) throws KillBillClientException {
         final RemoteResolverResponse.RemoteResolverResponseBuilder result = new RemoteResolverResponse.RemoteResolverResponseBuilder();
         request.getRequests()
-                .stream()
-                .forEachOrdered(r -> {
-                    try {
-                        r.resolve(client, requestOptions, result);
-                        logger.info(String.format("RemoteResolver [%d]: type='%s', id='%s' -> resolvedId='%s'",
-                                request.getRequestId(), r.getType(), r.getSrcKey(), result.getMapping(r.getType())));
-                    } catch (final KillBillClientException e) {
-                        logger.warn(String.format("RemoteResolver failed to execute request='%s', id='%s'", r.getType(), r.getSrcKey()));
-                    }
-                });
-
+               .stream()
+               .forEachOrdered(r -> {
+                   boolean resolved = false;
+                   try {
+                       r.resolve(client, requestOptions, result);
+                       resolved = true;
+                   } catch (final KillBillClientException e) {
+                       logger.warn("RemoteResolver {}: KillBillClientException...", request.getRequestId(), e);
+                       throw new  WrappedKillBillClientException(e);
+                   } catch (final UnresolvedException e) {
+                       logger.warn("RemoteResolver {}: UnresolvedException...", request.getRequestId(), e);
+                       throw new WrappedUnresolvedException(e.getMessage());
+                   } finally {
+                       if (resolved) {
+                           logger.info("RemoteResolver {}: type='{}', id='{}' -> resolvedId='{}'",
+                                                     request.getRequestId(), r.getType(), r.getSrcKey(), result.getMapping(r.getType()));
+                       }
+                   }
+               });
         return result.build();
     }
+
+
+    public static class WrappedKillBillClientException extends RuntimeException {
+        public WrappedKillBillClientException(final Throwable cause) {
+            super(cause);
+        }
+    }
+
+    public static class WrappedUnresolvedException extends RuntimeException {
+        public WrappedUnresolvedException(final String message) {
+            super(message);
+        }
+    }
+
+
 }

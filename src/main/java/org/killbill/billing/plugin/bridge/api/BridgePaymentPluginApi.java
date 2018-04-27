@@ -58,7 +58,10 @@ import org.killbill.billing.plugin.bridge.api.converter.PaymentTransactionInfoPl
 import org.killbill.billing.plugin.bridge.api.converter.ResultConverter;
 import org.killbill.billing.plugin.bridge.api.resolver.local.LocalResolver;
 import org.killbill.billing.plugin.bridge.api.resolver.remote.RemoteResolver;
+import org.killbill.billing.plugin.bridge.api.resolver.remote.RemoteResolver.WrappedKillBillClientException;
+import org.killbill.billing.plugin.bridge.api.resolver.remote.RemoteResolver.WrappedUnresolvedException;
 import org.killbill.billing.plugin.bridge.api.resolver.remote.RemoteResolverRequest;
+import org.killbill.billing.plugin.bridge.api.resolver.remote.RemoteResolverRequest.UnresolvedException;
 import org.killbill.billing.plugin.bridge.api.resolver.remote.RemoteResolverResponse;
 import org.killbill.billing.util.api.AuditLevel;
 import org.killbill.billing.util.callcontext.CallContext;
@@ -181,11 +184,11 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
 
             internalGenericPaymentTransactionOperation(new ClientOperation<Void>(null, null, null, "DELETE_PAYMENT_METHOD") {
                                                            @Override
-                                                           public Void doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException {
+                                                           public Void doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException, UnresolvedException {
 
                                                                final RemoteResolver resolver = new RemoteResolver(client, requestOptions);
                                                                final RemoteResolverResponse resolverResp = resolver.resolve(new RemoteResolverRequest()
-                                                                                                                                    .resolvePM(pmExternalKey, RemoteResolverRequest.DefaultAction.IGNORE_IF_MISSING));
+                                                                                                                                    .resolvePM(pmExternalKey));
                                                                client.deletePaymentMethod(resolverResp.getPaymentMethodIdMapping(), true, true, requestOptions);
                                                                return null;
                                                            }
@@ -225,14 +228,14 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
             final Account account = localResolver.getAccount(kbAccountId);
             final String pmExternalKey = localResolver.getPaymentMethodExternalKey(kbPaymentMethodId);
 
-            internalGenericPaymentTransactionOperation(new ClientOperation<Void>(null, null, null, "DELETE_PAYMENT_METHOD") {
+            internalGenericPaymentTransactionOperation(new ClientOperation<Void>(null, null, null, "SET_DEFAULT_PAYMENT_METHOD") {
                                                            @Override
-                                                           public Void doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException {
+                                                           public Void doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException, UnresolvedException {
 
                                                                final RemoteResolver resolver = new RemoteResolver(client, requestOptions);
                                                                final RemoteResolverResponse resolverResp = resolver.resolve(new RemoteResolverRequest()
-                                                                                                                                    .resolveAccount(account, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING)
-                                                                                                                                    .resolvePM(pmExternalKey, RemoteResolverRequest.DefaultAction.IGNORE_IF_MISSING));
+                                                                                                                                    .resolveAccount(account, true)
+                                                                                                                                    .resolvePM(pmExternalKey));
                                                                client.updateDefaultPaymentMethod(resolverResp.getAccountIdMapping(), resolverResp.getPaymentMethodIdMapping(), requestOptions);
                                                                return null;
                                                            }
@@ -252,10 +255,10 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
 
             return internalGenericPaymentTransactionOperation(new ClientOperation<org.killbill.billing.client.model.PaymentMethods>(kbAccountId, null, null, "GET_ACCOUNT_PAYMENT_METHODS") {
                                                                   @Override
-                                                                  public org.killbill.billing.client.model.PaymentMethods doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException {
+                                                                  public org.killbill.billing.client.model.PaymentMethods doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException, UnresolvedException {
                                                                       final RemoteResolver resolver = new RemoteResolver(client, requestOptions);
                                                                       final RemoteResolverResponse resolverResp = resolver.resolve(new RemoteResolverRequest()
-                                                                                                                                           .resolveAccount(account, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING));
+                                                                                                                                           .resolveAccount(account, true));
                                                                       return client.getPaymentMethodsForAccount(resolverResp.getAccountIdMapping(), ConverterHelper.convertToClientMapPluginProperties(properties), true, AuditLevel.NONE, requestOptions);
                                                                   }
                                                               },
@@ -284,11 +287,11 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
 
         return internalGenericPaymentTransactionOperation(new ClientOperation<org.killbill.billing.client.model.HostedPaymentPageFormDescriptor>(kbAccountId, null, null, "BUILD_FORM_DESC") {
                                                               @Override
-                                                              public org.killbill.billing.client.model.HostedPaymentPageFormDescriptor doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException {
+                                                              public org.killbill.billing.client.model.HostedPaymentPageFormDescriptor doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException, UnresolvedException {
 
                                                                   final RemoteResolver resolver = new RemoteResolver(client, requestOptions);
                                                                   final RemoteResolverResponse resolverResp = resolver.resolve(new RemoteResolverRequest()
-                                                                                                                                       .resolveAccount(account, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING));
+                                                                                                                                       .resolveAccount(account, true));
 
                                                                   final org.killbill.billing.client.model.HostedPaymentPageFields fields = new org.killbill.billing.client.model.HostedPaymentPageFields(ConverterHelper.convertToClientListPluginProperties(customFields));
                                                                   return client.buildFormDescriptor(fields, resolverResp.getAccountIdMapping(), null /* TODO ??? */, ConverterHelper.convertToClientMapPluginProperties(properties), requestOptions);
@@ -337,16 +340,16 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
 
         final ClientOperation<org.killbill.billing.client.model.PaymentTransaction> op = new ClientOperation<org.killbill.billing.client.model.PaymentTransaction>(kbAccountId, kbPaymentId, kbPaymentMethodId, transactionType.name()) {
             @Override
-            public org.killbill.billing.client.model.PaymentTransaction doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException, PaymentPluginApiException {
+            public org.killbill.billing.client.model.PaymentTransaction doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException, PaymentPluginApiException, UnresolvedException {
 
                 final Account account = localResolver.getAccount(kbAccountId);
 
                 final RemoteResolverRequest remoteResolverRequest = new RemoteResolverRequest()
-                        .resolveAccount(account, RemoteResolverRequest.DefaultAction.CREATE_IF_MISSING);
+                        .resolveAccount(account, true);
                 if (transactionType == TransactionType.REFUND ||
                     transactionType == TransactionType.VOID ||
                     transactionType == TransactionType.CAPTURE) {
-                    remoteResolverRequest.resolvePaymentTransaction(payment.getExternalKey(), paymentTransaction.getExternalKey(), RemoteResolverRequest.DefaultAction.THROW_IF_MISSING);
+                    remoteResolverRequest.resolvePaymentTransaction(payment.getExternalKey(), paymentTransaction.getExternalKey());
                 }
                 final RemoteResolver resolver = new RemoteResolver(client, requestOptions);
                 final RemoteResolverResponse resolverResp = resolver.resolve(remoteResolverRequest);
@@ -415,9 +418,20 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
         final KillBillClient client = configurationHandler.getConfigurable(tenantId);
         try {
             final R result = op.doOperation(client, DEFAULT_OPTIONS);
-            return converter.convertModelToApi(result);
-        } catch (final KillBillClientException e) {
+            return converter != null ? converter.convertModelToApi(result) : null;
+        } catch (final KillBillClientException e) { // When calling killbill client directly
             throw new PaymentBridgePluginApiException(e, op.getKbAccountId(), op.getKbPaymentId(), op.getKbPaymentMethodId(), op.getTransactionType());
+        } catch (final WrappedKillBillClientException e) { // When going through resolver where java 8 stream api mask checked exceptions
+            if (e.getCause() instanceof KillBillClientException) {
+                throw new PaymentBridgePluginApiException((KillBillClientException) e.getCause(), op.getKbAccountId(), op.getKbPaymentId(), op.getKbPaymentMethodId(), op.getTransactionType());
+            } else {
+                // Should never happen
+                throw e;
+            }
+        } catch (final WrappedUnresolvedException e) { // When going through resolver where java 8 stream api mask checked exceptions
+            throw new PaymentBridgePluginApiException(e.getMessage(), op.getKbAccountId(), op.getKbPaymentId(), op.getKbPaymentMethodId(), op.getTransactionType());
+        } catch (UnresolvedException e) { // When calling killbill client directly
+            throw new PaymentBridgePluginApiException(e.getMessage(), op.getKbAccountId(), op.getKbPaymentId(), op.getKbPaymentMethodId(), op.getTransactionType());
         }
     }
 
@@ -435,7 +449,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
             this.transactionType = transactionType;
         }
 
-        public abstract R doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException, PaymentPluginApiException;
+        public abstract R doOperation(final KillBillClient client, final RequestOptions requestOptions) throws KillBillClientException, PaymentPluginApiException, UnresolvedException;
 
         public UUID getKbAccountId() {
             return kbAccountId;
