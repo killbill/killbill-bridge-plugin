@@ -17,8 +17,6 @@
 
 package org.killbill.billing.plugin.bridge.api;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +24,7 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
+import org.killbill.billing.ErrorCode;
 import org.killbill.billing.account.api.Account;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.client.KillBillClient;
@@ -37,6 +36,7 @@ import org.killbill.billing.payment.api.Payment;
 import org.killbill.billing.payment.api.PaymentMethodPlugin;
 import org.killbill.billing.payment.api.PaymentTransaction;
 import org.killbill.billing.payment.api.PluginProperty;
+import org.killbill.billing.payment.api.TransactionStatus;
 import org.killbill.billing.payment.api.TransactionType;
 import org.killbill.billing.payment.plugin.api.GatewayNotification;
 import org.killbill.billing.payment.plugin.api.HostedPaymentPageFormDescriptor;
@@ -72,6 +72,7 @@ import org.osgi.service.log.LogService;
 import com.ning.http.client.Response;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
 // NOTE: We explicitly import 'org.killbill.billing.client.model.*' objects to avoid confusing api and client model -- which often have the same name
 
@@ -369,33 +370,58 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
 
                 final Iterable<PluginProperty> properties = buildProperties(originalProperties, context);
                 final org.killbill.billing.client.model.Payment result;
-                switch (transactionType) {
-                    case AUTHORIZE:
-                    case PURCHASE:
-                    case CREDIT:
-                        result = client.createPayment(resolverResp.getAccountIdMapping(), resolverResp.getPaymentMethodIdMapping(), transaction, paymentConfig.getControlPlugins(), ConverterHelper.convertToClientMapPluginProperties(properties, internalPaymentMethodIdProperty), requestOptions);
-                        break;
 
-                    case REFUND:
-                        result = client.refundPayment(transaction, paymentConfig.getControlPlugins(), ConverterHelper.convertToClientMapPluginProperties(properties, internalPaymentMethodIdProperty), requestOptions);
-                        break;
+                try {
+                    switch (transactionType) {
+                        case AUTHORIZE:
+                        case PURCHASE:
+                        case CREDIT:
+                            result = client.createPayment(resolverResp.getAccountIdMapping(), resolverResp.getPaymentMethodIdMapping(), transaction, paymentConfig.getControlPlugins(), ConverterHelper.convertToClientMapPluginProperties(properties, internalPaymentMethodIdProperty), requestOptions);
+                            break;
 
-                    case VOID:
-                        result = client.voidPayment(resolverResp.getPaymentMethodIdMapping(), payment.getExternalKey(), paymentTransaction.getExternalKey(), paymentConfig.getControlPlugins(), ConverterHelper.convertToClientMapPluginProperties(properties, internalPaymentMethodIdProperty), requestOptions);
-                        break;
+                        case REFUND:
+                            result = client.refundPayment(transaction, paymentConfig.getControlPlugins(), ConverterHelper.convertToClientMapPluginProperties(properties, internalPaymentMethodIdProperty), requestOptions);
+                            break;
 
-                    case CAPTURE:
-                        result = client.captureAuthorization(transaction, paymentConfig.getControlPlugins(), ConverterHelper.convertToClientMapPluginProperties(properties, internalPaymentMethodIdProperty), requestOptions);
-                        break;
+                        case VOID:
+                            result = client.voidPayment(resolverResp.getPaymentMethodIdMapping(), payment.getExternalKey(), paymentTransaction.getExternalKey(), paymentConfig.getControlPlugins(), ConverterHelper.convertToClientMapPluginProperties(properties, internalPaymentMethodIdProperty), requestOptions);
+                            break;
 
-                    default:
-                        throw new IllegalStateException("Unexpected transaction type " + transactionType);
+                        case CAPTURE:
+                            result = client.captureAuthorization(transaction, paymentConfig.getControlPlugins(), ConverterHelper.convertToClientMapPluginProperties(properties, internalPaymentMethodIdProperty), requestOptions);
+                            break;
+
+                        default:
+                            throw new IllegalStateException("Unexpected transaction type " + transactionType);
+                    }
+
+                    // Filter the transaction associated with this operation
+                    final Optional<org.killbill.billing.client.model.PaymentTransaction> optionalTargetTransaction = ConverterHelper.getTransactionMatchOrLast(result.getTransactions(), paymentTransaction.getExternalKey());
+                    Preconditions.checkState(optionalTargetTransaction.isPresent(), String.format("Cannot find the matching transaction for payment='%s', kbTransactionId='%s'", kbPaymentId, kbTransactionId));
+                    return optionalTargetTransaction.get();
+                } catch (final KillBillClientException e) {
+                    if (e.getBillingException() != null && e.getBillingException().getCode() == ErrorCode.PAYMENT_PLUGIN_API_ABORTED.getCode()) {
+                        return new org.killbill.billing.client.model.PaymentTransaction(transaction.getTransactionId(),
+                                                                                        transaction.getTransactionExternalKey(),
+                                                                                        transaction.getPaymentId(),
+                                                                                        transaction.getPaymentExternalKey(),
+                                                                                        transaction.getTransactionType(),
+                                                                                        transaction.getAmount(),
+                                                                                        transaction.getCurrency(),
+                                                                                        null,
+                                                                                        BigDecimal.ZERO,
+                                                                                        transaction.getCurrency(),
+                                                                                        TransactionStatus.PLUGIN_FAILURE.name(),
+                                                                                        null,
+                                                                                        null,
+                                                                                        null,
+                                                                                        null,
+                                                                                        ImmutableList.<org.killbill.billing.client.model.PluginProperty>of(),
+                                                                                        ImmutableList.<org.killbill.billing.client.model.AuditLog>of());
+                    } else {
+                        throw e;
+                    }
                 }
-
-                // Filter the transaction associated with this operation
-                final Optional<org.killbill.billing.client.model.PaymentTransaction> optionalTargetTransaction = ConverterHelper.getTransactionMatchOrLast(result.getTransactions(), paymentTransaction.getExternalKey());
-                Preconditions.checkState(optionalTargetTransaction.isPresent(), String.format("Cannot find the matching transaction for payment='%s', kbTransactionId='%s'", kbPaymentId, kbTransactionId));
-                return optionalTargetTransaction.get();
             }
         };
 
@@ -408,7 +434,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
             return result;
         } catch (final PaymentPluginApiException e) {
             logService.log(LogService.LOG_WARNING, String.format("Bridge Payment EXITING: Failed to run transactionType='%s', kbAccountId='%s', kbPaymentId='%s', kbPaymentMethodId='%s', amount='%s', currency='%s'",
-                                                              transactionType, kbAccountId, kbPaymentId, kbPaymentMethodId, amount, currency), e);
+                                                                 transactionType, kbAccountId, kbPaymentId, kbPaymentMethodId, amount, currency), e);
             throw e;
         }
     }
