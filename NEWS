@@ -1,5 +1,13 @@
-0.0.8
+0.0.10
     Add support for aborted payments
+    Update killbill-oss-parent to 0.141.78
+    Update Jackson to 2.9.5
+
+0.0.9
+    DO NOT USE
+
+0.0.8
+    DO NOT USE
 
 0.0.7
     Update base pom.xml
