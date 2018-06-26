@@ -20,12 +20,14 @@ package org.killbill.billing.plugin.bridge.api;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.ServerSocket;
+import java.util.List;
 import java.util.UUID;
 
 import javax.annotation.Nullable;
 
 import org.joda.time.DateTime;
 import org.killbill.billing.account.api.Account;
+import org.killbill.billing.account.api.AccountApiException;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillLogService;
@@ -47,6 +49,7 @@ import org.killbill.billing.util.callcontext.CallContext;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.mockito.Mockito;
 import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -76,6 +79,13 @@ public class TestBridgePaymentPluginApi {
                                                           "    internalPaymentMethodIdName: paymentInstrumentId\n";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private Account account;
+    private OSGIKillbillAPI killbillAPI;
+    private BridgePaymentPluginApi pluginApi;
+    private PaymentMethod paymentMethod;
+    private Payment payment;
+    private CallContext callContext;
+
     private static int findFreePort() throws IOException {
         final ServerSocket serverSocket = new ServerSocket(0);
         final int freePort = serverSocket.getLocalPort();
@@ -83,10 +93,10 @@ public class TestBridgePaymentPluginApi {
         return freePort;
     }
 
-    @Test(groups = "slow")
-    public void testWithAbortedPayment() throws Exception {
-        final Account account = TestUtils.buildAccount(Currency.USD, "US");
-        final OSGIKillbillAPI killbillAPI = TestUtils.buildOSGIKillbillAPI(account);
+    @BeforeMethod(groups = "slow")
+    public void setUp() throws AccountApiException, PaymentApiException {
+        account = TestUtils.buildAccount(Currency.USD, "US");
+        killbillAPI = TestUtils.buildOSGIKillbillAPI(account);
         final OSGIKillbillLogService logService = TestUtils.buildLogService();
         final String region = "local";
         final KillbillClientConfigurationHandler configurationHandler = new KillbillClientConfigurationHandlerForTestBridgePaymentPluginApi(BridgeActivator.PLUGIN_NAME,
@@ -97,18 +107,24 @@ public class TestBridgePaymentPluginApi {
                                                                                                                                      killbillAPI,
                                                                                                                                      logService,
                                                                                                                                      region);
-        final BridgePaymentPluginApi pluginApi = new BridgePaymentPluginApi(killbillAPI,
-                                                                            logService,
-                                                                            configurationHandler,
-                                                                            paymentConfigurationHandler);
+        pluginApi = new BridgePaymentPluginApi(killbillAPI,
+                                               logService,
+                                               configurationHandler,
+                                               paymentConfigurationHandler);
 
         final UUID paymentMethodId = UUID.randomUUID();
-        final PaymentMethod paymentMethod = TestUtils.buildPaymentMethod(account.getId(), paymentMethodId, BridgeActivator.PLUGIN_NAME, killbillAPI);
+        paymentMethod = TestUtils.buildPaymentMethod(account.getId(), paymentMethodId, BridgeActivator.PLUGIN_NAME, killbillAPI);
         Mockito.when(killbillAPI.getPaymentApi().getPaymentMethodById(Mockito.eq(paymentMethodId), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.<Iterable<PluginProperty>>any(), Mockito.<TenantContext>any())).thenReturn(paymentMethod);
 
+        payment = TestUtils.buildPayment(account.getId(), account.getPaymentMethodId(), account.getCurrency(), killbillAPI);
+        callContext = new PluginCallContext(BridgeActivator.PLUGIN_NAME, new DateTime(), account.getId(), UUID.randomUUID());
+    }
+
+    @Test(groups = "slow")
+    public void testWithAbortedPayment() throws Exception {
         final PaymentTransactionInfoPlugin result = WireMockHelper.doWithWireMock(new WithWireMock<PaymentTransactionInfoPlugin>() {
             @Override
-            public PaymentTransactionInfoPlugin execute(final WireMockServer server) throws PaymentPluginApiException, PaymentApiException, JsonProcessingException {
+            public PaymentTransactionInfoPlugin execute(final WireMockServer server) throws PaymentPluginApiException, JsonProcessingException {
                 stubFor(get(urlPathEqualTo("/1.0/kb/accounts")).willReturn(aResponse().withBody(OBJECT_MAPPER.writeValueAsBytes(new org.killbill.billing.client.model.Account(account.getId(),
                                                                                                                                                                               account.getName(),
                                                                                                                                                                               account.getFirstNameLength(),
@@ -139,9 +155,7 @@ public class TestBridgePaymentPluginApi {
                 // Aborted payment
                 stubFor(post(urlPathEqualTo("/1.0/kb/accounts/" + account.getId() + "/payments")).willReturn(aResponse().withBody("{\"code\":7106}").withStatus(422)));
 
-                final Payment payment = TestUtils.buildPayment(account.getId(), account.getPaymentMethodId(), account.getCurrency(), killbillAPI);
                 final PaymentTransaction authorizationTransaction = TestUtils.buildPaymentTransaction(payment, TransactionType.PURCHASE, BigDecimal.TEN, Currency.USD);
-                final CallContext callContext = new PluginCallContext(BridgeActivator.PLUGIN_NAME, new DateTime(), account.getId(), UUID.randomUUID());
 
                 return pluginApi.authorizePayment(account.getId(),
                                                   payment.getId(),
@@ -154,6 +168,47 @@ public class TestBridgePaymentPluginApi {
             }
         });
         Assert.assertEquals(result.getStatus(), PaymentPluginStatus.CANCELED);
+    }
+
+    @Test(groups = "slow")
+    public void testSuccessfulPayment() throws Exception {
+        final PaymentTransaction purchaseTransaction = TestUtils.buildPaymentTransaction(payment, TransactionType.PURCHASE, BigDecimal.TEN, Currency.USD);
+
+        final List<PaymentTransactionInfoPlugin> result = WireMockHelper.doWithWireMock(new WithWireMock<List<PaymentTransactionInfoPlugin>>() {
+            @Override
+            public List<PaymentTransactionInfoPlugin> execute(final WireMockServer server) throws PaymentPluginApiException {
+                // External keys match, but not the ID
+                final String paymentId = UUID.randomUUID().toString();
+                stubFor(get(urlPathEqualTo("/1.0/kb/payments")).willReturn(aResponse().withBody("{\"accountId\":\"" + UUID.randomUUID().toString() + "\"," +
+                                                                                                "\"paymentId\":\"" + paymentId + "\"," +
+                                                                                                "\"paymentExternalKey\":\"" + payment.getExternalKey() + "\"," +
+                                                                                                "\"currency\":\"USD\"," +
+                                                                                                "\"paymentMethodId\":\"" + UUID.randomUUID().toString() + "\"," +
+                                                                                                "\"transactions\":[" +
+                                                                                                "{\"transactionId\":\"" + UUID.randomUUID().toString() + "\"," +
+                                                                                                "\"transactionExternalKey\":\"" + purchaseTransaction.getExternalKey() + "\"," +
+                                                                                                "\"paymentId\":\"" + paymentId + "\"," +
+                                                                                                "\"paymentExternalKey\":\"" + payment.getExternalKey() + "\"," +
+                                                                                                "\"transactionType\":\"PURCHASE\"," +
+                                                                                                "\"amount\":10.00," +
+                                                                                                "\"currency\":\"USD\"," +
+                                                                                                "\"effectiveDate\":\"2018-06-11T15:47:00.000Z\"," +
+                                                                                                "\"processedAmount\":10.00," +
+                                                                                                "\"processedCurrency\":\"USD\"," +
+                                                                                                "\"status\":\"SUCCESS\"}]}")
+                                                                                      .withStatus(200)));
+
+                return pluginApi.getPaymentInfo(account.getId(),
+                                                payment.getId(),
+                                                ImmutableList.<PluginProperty>of(),
+                                                callContext);
+            }
+        });
+        Assert.assertEquals(result.size(), 1);
+        Assert.assertEquals(result.get(0).getKbPaymentId(), payment.getId());
+        Assert.assertEquals(result.get(0).getKbTransactionPaymentId(), purchaseTransaction.getId());
+        Assert.assertEquals(result.get(0).getStatus(), PaymentPluginStatus.PROCESSED);
+        Assert.assertEquals(result.get(0).getAmount().compareTo(BigDecimal.TEN), 0);
     }
 
     private interface WithWireMock<T> {

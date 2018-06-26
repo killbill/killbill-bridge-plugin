@@ -142,7 +142,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
                                                                   return client.getPaymentByExternalKey(payment.getExternalKey(), true, ConverterHelper.convertToClientMapPluginProperties(properties), AuditLevel.NONE, requestOptions);
                                                               }
                                                           },
-                                                          new PaymentTransactionInfoPluginListResultConverter(),
+                                                          new PaymentTransactionInfoPluginListResultConverter(killbillAPI, kbPaymentId, context),
                                                           context.getTenantId());
     }
 
@@ -426,7 +426,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
         };
 
         try {
-            PaymentTransactionInfoPlugin result = internalGenericPaymentTransactionOperation(op, new PaymentTransactionInfoPluginResultConverter(), context.getTenantId());
+            PaymentTransactionInfoPlugin result = internalGenericPaymentTransactionOperation(op, new PaymentTransactionInfoPluginResultConverter(payment), context.getTenantId());
 
             logService.log(LogService.LOG_INFO, String.format("Bridge Payment EXITING: Success running transactionType='%s', kbAccountId='%s', kbPaymentId='%s', kbPaymentMethodId='%s', amount='%s', currency='%s'",
                                                               transactionType, kbAccountId, kbPaymentId, kbPaymentMethodId, amount, currency));
