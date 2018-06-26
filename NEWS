@@ -1,3 +1,8 @@
+0.0.11
+    Fix IDs mapping in PaymentTransactionInfoPluginResultConverter
+    Add healthcheck
+    Update killbill-oss-parent to 0.141.90
+
 0.0.10
     Add support for aborted payments
     Update killbill-oss-parent to 0.141.78
