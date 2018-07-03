@@ -112,7 +112,7 @@ public class TestBridgePaymentPluginApi {
                                                configurationHandler,
                                                paymentConfigurationHandler);
 
-        final UUID paymentMethodId = UUID.randomUUID();
+        final UUID paymentMethodId = account.getPaymentMethodId();
         paymentMethod = TestUtils.buildPaymentMethod(account.getId(), paymentMethodId, BridgeActivator.PLUGIN_NAME, killbillAPI);
         Mockito.when(killbillAPI.getPaymentApi().getPaymentMethodById(Mockito.eq(paymentMethodId), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.<Iterable<PluginProperty>>any(), Mockito.<TenantContext>any())).thenReturn(paymentMethod);
 
@@ -171,7 +171,7 @@ public class TestBridgePaymentPluginApi {
     }
 
     @Test(groups = "slow")
-    public void testSuccessfulPayment() throws Exception {
+    public void testGetSuccessfulPayment() throws Exception {
         final PaymentTransaction purchaseTransaction = TestUtils.buildPaymentTransaction(payment, TransactionType.PURCHASE, BigDecimal.TEN, Currency.USD);
 
         final List<PaymentTransactionInfoPlugin> result = WireMockHelper.doWithWireMock(new WithWireMock<List<PaymentTransactionInfoPlugin>>() {
@@ -209,6 +209,85 @@ public class TestBridgePaymentPluginApi {
         Assert.assertEquals(result.get(0).getKbTransactionPaymentId(), purchaseTransaction.getId());
         Assert.assertEquals(result.get(0).getStatus(), PaymentPluginStatus.PROCESSED);
         Assert.assertEquals(result.get(0).getAmount().compareTo(BigDecimal.TEN), 0);
+    }
+
+    @Test(groups = "slow")
+    public void testRefund() throws Exception {
+        final UUID kbSPaymentId = payment.getId();
+        final String kbSPaymentExternalKey = payment.getExternalKey();
+        final UUID kbSPaymentMethodId = paymentMethod.getId();
+
+        final PaymentTransaction purchaseTransaction = TestUtils.buildPaymentTransaction(payment, TransactionType.PURCHASE, BigDecimal.TEN, Currency.USD);
+        final String kbSPurchaseTransactionExternalKey = purchaseTransaction.getExternalKey();
+
+        final PaymentTransaction refundTransaction = TestUtils.buildPaymentTransaction(payment, TransactionType.REFUND, BigDecimal.TEN, Currency.USD);
+        final UUID kbSRefundTransactionId = refundTransaction.getId();
+        final String kbSRefundTransactionExternalKey = refundTransaction.getExternalKey();
+
+        // External keys match, but not the ID
+        final UUID kbPAccountId = UUID.randomUUID();
+        final UUID kbPPaymentId = UUID.randomUUID();
+        final UUID kbPPurchaseTransactionId = UUID.randomUUID();
+        final UUID kbPRefundTransactionId = UUID.randomUUID();
+        final UUID kbPPaymentMethodId = UUID.randomUUID();
+
+        final PaymentTransactionInfoPlugin result = WireMockHelper.doWithWireMock(new WithWireMock<PaymentTransactionInfoPlugin>() {
+            @Override
+            public PaymentTransactionInfoPlugin execute(final WireMockServer server) throws PaymentPluginApiException {
+                // Requests pre-refund
+                stubFor(get(urlPathEqualTo("/1.0/kb/accounts")).willReturn(aResponse().withBody("{\"accountId\":\"" + kbPAccountId.toString() + "\"," +
+                                                                                                "\"externalKey\":\"" + account.getExternalKey() + "\"}")
+                                                                                      .withStatus(200)));
+                final String payment = "{\"accountId\":\"" + kbPAccountId.toString() + "\"," +
+                                       "\"paymentId\":\"" + kbPPaymentId + "\"," +
+                                       "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
+                                       "\"currency\":\"USD\"," +
+                                       "\"paymentMethodId\":\"" + kbPPaymentMethodId + "\"," +
+                                       "\"transactions\":[" +
+                                       "{\"transactionId\":\"" + kbPPurchaseTransactionId + "\"," +
+                                       "\"transactionExternalKey\":\"" + kbSPurchaseTransactionExternalKey + "\"," +
+                                       "\"paymentId\":\"" + kbPPaymentId + "\"," +
+                                       "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
+                                       "\"transactionType\":\"PURCHASE\"," +
+                                       "\"amount\":10.00," +
+                                       "\"currency\":\"USD\"," +
+                                       "\"effectiveDate\":\"2018-06-11T15:47:00.000Z\"," +
+                                       "\"processedAmount\":10.00," +
+                                       "\"processedCurrency\":\"USD\"," +
+                                       "\"status\":\"SUCCESS\"}," +
+                                       "{\"transactionId\":\"" + kbPRefundTransactionId + "\"," +
+                                       "\"transactionExternalKey\":\"" + kbSRefundTransactionExternalKey + "\"," +
+                                       "\"paymentId\":\"" + kbPPaymentId + "\"," +
+                                       "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
+                                       "\"transactionType\":\"REFUND\"," +
+                                       "\"amount\":10.00," +
+                                       "\"currency\":\"USD\"," +
+                                       "\"effectiveDate\":\"2018-06-11T15:47:00.000Z\"," +
+                                       "\"processedAmount\":10.00," +
+                                       "\"processedCurrency\":\"USD\"," +
+                                       "\"status\":\"SUCCESS\"}]}";
+                stubFor(get(urlPathEqualTo("/1.0/kb/payments/" + kbPPaymentId)).willReturn(aResponse().withBody(payment).withStatus(200)));
+                stubFor(get(urlPathEqualTo("/1.0/kb/payments")).willReturn(aResponse().withBody(payment).withStatus(200)));
+
+                // Refund request
+                stubFor(post(urlPathEqualTo("/1.0/kb/payments/" + kbPPaymentId + "/refunds")).willReturn(aResponse()
+                                                                                                                 .withHeader("Location", "/1.0/kb/payments/" + kbPPaymentId)
+                                                                                                                 .withStatus(201)));
+
+                return pluginApi.refundPayment(account.getId(),
+                                               kbSPaymentId,
+                                               kbSRefundTransactionId,
+                                               kbSPaymentMethodId,
+                                               BigDecimal.TEN,
+                                               Currency.USD,
+                                               ImmutableList.<PluginProperty>of(),
+                                               callContext);
+            }
+        });
+        Assert.assertEquals(result.getStatus(), PaymentPluginStatus.PROCESSED);
+        Assert.assertEquals(result.getTransactionType(), TransactionType.REFUND);
+        Assert.assertEquals(result.getKbTransactionPaymentId(), kbSRefundTransactionId);
+        Assert.assertEquals(result.getKbPaymentId(), kbSPaymentId);
     }
 
     private interface WithWireMock<T> {
