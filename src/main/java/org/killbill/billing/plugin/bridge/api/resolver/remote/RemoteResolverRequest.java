@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -102,31 +102,6 @@ public class RemoteResolverRequest {
                     throw new UnresolvedException(String.format("Failed to resolve payment externalKey='%s'", paymentExternalKey));
                 }
             }));
-        }
-        return this;
-    }
-
-    public RemoteResolverRequest resolvePaymentTransaction(final String paymentExternalKey, final String transactionExternalKey) throws UnresolvedException {
-
-        if (paymentExternalKey != null) {
-            if (transactionExternalKey != null) {
-                requests.add(new Request(ResolvingType.PAYMENT_AND_TRANSACTION, paymentExternalKey, (client, requestOptions, response) -> {
-                    final Payment payment = client.getPaymentByExternalKey(paymentExternalKey, requestOptions);
-                    if (payment != null) {
-                        response.setPaymentIdMapping(payment.getPaymentId());
-                        final Optional<PaymentTransaction> transaction = payment.getTransactions().stream()
-                                                                                .filter(t -> t.getTransactionExternalKey().equals(transactionExternalKey))
-                                                                                .findAny();
-                        if (transaction.isPresent()) {
-                            response.setTransactionIdMapping(transaction.get().getTransactionId());
-                        } else {
-                            throw new UnresolvedException(String.format("Failed to resolve payment transaction externalKey='%s'", transactionExternalKey));
-                        }
-                    }
-                }));
-            } else {
-                resolvePayment(paymentExternalKey);
-            }
         }
         return this;
     }

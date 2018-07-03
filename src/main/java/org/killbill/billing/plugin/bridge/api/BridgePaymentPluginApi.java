@@ -350,7 +350,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
                 if (transactionType == TransactionType.REFUND ||
                     transactionType == TransactionType.VOID ||
                     transactionType == TransactionType.CAPTURE) {
-                    remoteResolverRequest.resolvePaymentTransaction(payment.getExternalKey(), paymentTransaction.getExternalKey());
+                    remoteResolverRequest.resolvePayment(payment.getExternalKey());
                 }
                 final RemoteResolver resolver = new RemoteResolver(client, requestOptions);
                 final RemoteResolverResponse resolverResp = resolver.resolve(remoteResolverRequest);
@@ -360,7 +360,6 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
                 transaction.setPaymentExternalKey(payment.getExternalKey());
                 transaction.setTransactionExternalKey(paymentTransaction.getExternalKey());
                 transaction.setPaymentId(resolverResp.getPaymentIdMapping());
-                transaction.setTransactionId(resolverResp.getTransactionIdMapping());
                 if (amount != null) {
                     transaction.setAmount(amount);
                 }

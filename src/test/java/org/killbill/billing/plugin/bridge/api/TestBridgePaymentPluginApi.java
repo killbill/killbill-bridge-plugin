@@ -64,6 +64,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 
 public class TestBridgePaymentPluginApi {
 
@@ -231,48 +232,77 @@ public class TestBridgePaymentPluginApi {
         final UUID kbPRefundTransactionId = UUID.randomUUID();
         final UUID kbPPaymentMethodId = UUID.randomUUID();
 
-        final PaymentTransactionInfoPlugin result = WireMockHelper.doWithWireMock(new WithWireMock<PaymentTransactionInfoPlugin>() {
-            @Override
-            public PaymentTransactionInfoPlugin execute(final WireMockServer server) throws PaymentPluginApiException {
-                // Requests pre-refund
-                stubFor(get(urlPathEqualTo("/1.0/kb/accounts")).willReturn(aResponse().withBody("{\"accountId\":\"" + kbPAccountId.toString() + "\"," +
-                                                                                                "\"externalKey\":\"" + account.getExternalKey() + "\"}")
-                                                                                      .withStatus(200)));
-                final String payment = "{\"accountId\":\"" + kbPAccountId.toString() + "\"," +
+        final String purchaseTransactionResponse = "{\"transactionId\":\"" + kbPPurchaseTransactionId + "\"," +
+                                                   "\"transactionExternalKey\":\"" + kbSPurchaseTransactionExternalKey + "\"," +
+                                                   "\"paymentId\":\"" + kbPPaymentId + "\"," +
+                                                   "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
+                                                   "\"transactionType\":\"PURCHASE\"," +
+                                                   "\"amount\":10.00," +
+                                                   "\"currency\":\"USD\"," +
+                                                   "\"effectiveDate\":\"2018-06-11T15:47:00.000Z\"," +
+                                                   "\"processedAmount\":10.00," +
+                                                   "\"processedCurrency\":\"USD\"," +
+                                                   "\"status\":\"SUCCESS\"}";
+        final String refundTransactionResponse = "{\"transactionId\":\"" + kbPRefundTransactionId + "\"," +
+                                                 "\"transactionExternalKey\":\"" + kbSRefundTransactionExternalKey + "\"," +
+                                                 "\"paymentId\":\"" + kbPPaymentId + "\"," +
+                                                 "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
+                                                 "\"transactionType\":\"REFUND\"," +
+                                                 "\"amount\":10.00," +
+                                                 "\"currency\":\"USD\"," +
+                                                 "\"effectiveDate\":\"2018-06-11T15:47:00.000Z\"," +
+                                                 "\"processedAmount\":10.00," +
+                                                 "\"processedCurrency\":\"USD\"," +
+                                                 "\"status\":\"SUCCESS\"}";
+        final String paymentResponse = "{\"accountId\":\"" + kbPAccountId.toString() + "\"," +
                                        "\"paymentId\":\"" + kbPPaymentId + "\"," +
                                        "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
                                        "\"currency\":\"USD\"," +
                                        "\"paymentMethodId\":\"" + kbPPaymentMethodId + "\"," +
-                                       "\"transactions\":[" +
-                                       "{\"transactionId\":\"" + kbPPurchaseTransactionId + "\"," +
-                                       "\"transactionExternalKey\":\"" + kbSPurchaseTransactionExternalKey + "\"," +
-                                       "\"paymentId\":\"" + kbPPaymentId + "\"," +
-                                       "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
-                                       "\"transactionType\":\"PURCHASE\"," +
-                                       "\"amount\":10.00," +
-                                       "\"currency\":\"USD\"," +
-                                       "\"effectiveDate\":\"2018-06-11T15:47:00.000Z\"," +
-                                       "\"processedAmount\":10.00," +
-                                       "\"processedCurrency\":\"USD\"," +
-                                       "\"status\":\"SUCCESS\"}," +
-                                       "{\"transactionId\":\"" + kbPRefundTransactionId + "\"," +
-                                       "\"transactionExternalKey\":\"" + kbSRefundTransactionExternalKey + "\"," +
-                                       "\"paymentId\":\"" + kbPPaymentId + "\"," +
-                                       "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
-                                       "\"transactionType\":\"REFUND\"," +
-                                       "\"amount\":10.00," +
-                                       "\"currency\":\"USD\"," +
-                                       "\"effectiveDate\":\"2018-06-11T15:47:00.000Z\"," +
-                                       "\"processedAmount\":10.00," +
-                                       "\"processedCurrency\":\"USD\"," +
-                                       "\"status\":\"SUCCESS\"}]}";
-                stubFor(get(urlPathEqualTo("/1.0/kb/payments/" + kbPPaymentId)).willReturn(aResponse().withBody(payment).withStatus(200)));
-                stubFor(get(urlPathEqualTo("/1.0/kb/payments")).willReturn(aResponse().withBody(payment).withStatus(200)));
+                                       "\"transactions\":";
+        final String paymentWithPurchaseResponse = paymentResponse + "[" +
+                                                   purchaseTransactionResponse + "]}";
+        final String paymentWithPurchaseAndRefundResponse = paymentResponse + "[" +
+                                                            purchaseTransactionResponse + "," +
+                                                            refundTransactionResponse + "]}";
+
+        final PaymentTransactionInfoPlugin result = WireMockHelper.doWithWireMock(new WithWireMock<PaymentTransactionInfoPlugin>() {
+            @Override
+            public PaymentTransactionInfoPlugin execute(final WireMockServer server) throws PaymentPluginApiException {
+                stubFor(get(urlPathEqualTo("/1.0/kb/accounts"))
+                                .inScenario("REFUND")
+                                .willReturn(aResponse().withBody("{\"accountId\":\"" + kbPAccountId.toString() + "\"," +
+                                                                 "\"externalKey\":\"" + account.getExternalKey() + "\"}")
+                                                       .withStatus(200)));
+
+                // Requests pre-refund
+                stubFor(get(urlPathEqualTo("/1.0/kb/payments/" + kbPPaymentId))
+                                .inScenario("REFUND")
+                                .whenScenarioStateIs(STARTED)
+                                .willReturn(aResponse().withBody(paymentWithPurchaseResponse).withStatus(200)));
+                stubFor(get(urlPathEqualTo("/1.0/kb/payments"))
+                                .inScenario("REFUND")
+                                .whenScenarioStateIs(STARTED)
+                                .willReturn(aResponse().withBody(paymentWithPurchaseResponse).withStatus(200)));
+
+                // Requests post-refund
+                stubFor(get(urlPathEqualTo("/1.0/kb/payments/" + kbPPaymentId))
+                                .inScenario("REFUND")
+                                .whenScenarioStateIs("Refunded")
+                                .willReturn(aResponse().withBody(paymentWithPurchaseAndRefundResponse).withStatus(200)));
+                stubFor(get(urlPathEqualTo("/1.0/kb/payments"))
+                                .inScenario("REFUND")
+                                .whenScenarioStateIs("Refunded")
+                                .willReturn(aResponse().withBody(paymentWithPurchaseAndRefundResponse).withStatus(200)));
 
                 // Refund request
-                stubFor(post(urlPathEqualTo("/1.0/kb/payments/" + kbPPaymentId + "/refunds")).willReturn(aResponse()
-                                                                                                                 .withHeader("Location", "/1.0/kb/payments/" + kbPPaymentId)
-                                                                                                                 .withStatus(201)));
+                stubFor(post(urlPathEqualTo("/1.0/kb/payments/" + kbPPaymentId + "/refunds"))
+                                .inScenario("REFUND")
+                                .whenScenarioStateIs(STARTED)
+                                .willReturn(aResponse()
+                                                    .withHeader("Location", "/1.0/kb/payments/" + kbPPaymentId)
+                                                    .withStatus(201))
+                                .willSetStateTo("Refunded"));
 
                 return pluginApi.refundPayment(account.getId(),
                                                kbSPaymentId,
