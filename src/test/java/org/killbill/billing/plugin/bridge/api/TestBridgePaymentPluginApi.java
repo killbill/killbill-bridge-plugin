@@ -148,7 +148,7 @@ public class TestBridgePaymentPluginApi {
                                                                                                                                                                               account.getPhone(),
                                                                                                                                                                               account.getNotes(),
                                                                                                                                                                               account.isMigrated(),
-                                                                                                                                                                              account.isNotifiedForInvoices(),
+                                                                                                                                                                              false,
                                                                                                                                                                               null,
                                                                                                                                                                               null)))
                                                                                       .withStatus(200)));
