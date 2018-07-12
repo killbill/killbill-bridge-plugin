@@ -20,11 +20,11 @@
     <parent>
         <artifactId>killbill-oss-parent</artifactId>
         <groupId>org.kill-bill.billing</groupId>
-        <version>0.141.97</version>
+        <version>0.142.1</version>
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>bridge-plugin</artifactId>
-    <version>0.0.13-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <name>Kill Bill OSGI Bridge plugin</name>
     <description>Kill Bill Bridge plugin</description>

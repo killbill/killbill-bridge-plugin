@@ -1,5 +1,17 @@
-# Overview
+Bridge plugin
+=============
 
+Release builds are available on [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.kill-bill.billing.plugin.java%22%20AND%20a%3A%22bridge-plugin%22) with coordinates `org.kill-bill.billing.plugin.java:bridge-plugin`.
+
+Kill Bill compatibility
+-----------------------
+
+| Plugin version | Kill Bill version |
+| -------------: | ----------------: |
+| 0.0.y          | 0.19.z            |
+| 0.1.y          | 0.20.z            |
+
+# Overview
 
 The `killbill-bridge-plugin`, or in short `bridge`, is intended to bridge two deployments of Kill Bill, one used as a subscription/invoice engine (`KB Subscription` or in short `KB-S`) , and the other one used as an internal payment gateway (`KB Payment` or in short `KB-P`):
 
