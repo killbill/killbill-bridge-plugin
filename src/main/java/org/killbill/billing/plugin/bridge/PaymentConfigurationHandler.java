@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -19,23 +19,19 @@ package org.killbill.billing.plugin.bridge;
 
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillLogService;
-import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
+import org.killbill.billing.plugin.core.config.YAMLPluginTenantConfigurationHandler;
 
-import java.util.Properties;
+public class PaymentConfigurationHandler extends YAMLPluginTenantConfigurationHandler<BridgeConfig, PaymentConfig> {
 
-import static org.killbill.billing.plugin.bridge.PaymentProxyModel.PROXY_ROUTING;
-
-public class PaymentConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<PaymentConfig> {
-
-    public PaymentConfigurationHandler(final String pluginName, final OSGIKillbillAPI osgiKillbillAPI, final OSGIKillbillLogService osgiKillbillLogService) {
-        super(pluginName, osgiKillbillAPI, osgiKillbillLogService);
+    public PaymentConfigurationHandler(final String pluginName,
+                                       final OSGIKillbillAPI osgiKillbillAPI,
+                                       final OSGIKillbillLogService osgiKillbillLogService,
+                                       final String region) {
+        super(pluginName, osgiKillbillAPI, osgiKillbillLogService, region);
     }
 
     @Override
-    protected PaymentConfig createConfigurable(final Properties properties) {
-        final String internalPaymentMethodIdName = properties.getProperty(BridgeActivator.PROPERTY_PREFIX + "internalPaymentMethodIdName", "internalPaymentMethodId");
-        final String proxyModel = properties.getProperty(BridgeActivator.PROPERTY_PREFIX + "proxyModel", PROXY_ROUTING.getName());
-        final String controlPluginList = properties.getProperty(BridgeActivator.PROPERTY_PREFIX + "controlPlugins", null);
-        return new PaymentConfig(proxyModel, internalPaymentMethodIdName, controlPluginList);
+    protected PaymentConfig createConfigurable(final BridgeConfig configObject) {
+        return configObject.paymentConfig;
     }
 }

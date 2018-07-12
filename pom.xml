@@ -20,11 +20,11 @@
     <parent>
         <artifactId>killbill-oss-parent</artifactId>
         <groupId>org.kill-bill.billing</groupId>
-        <version>0.141.33</version>
+        <version>0.141.97</version>
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>bridge-plugin</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.0.13-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <name>Kill Bill OSGI Bridge plugin</name>
     <description>Kill Bill Bridge plugin</description>
@@ -38,6 +38,11 @@
         <system>Github</system>
         <url>https://github.com/killbill/killbill-bridge-plugin/issues</url>
     </issueManagement>
+    <properties>
+        <!-- More recent versions than the core (JDK1.8+) -->
+        <guava.version>21.0</guava.version>
+        <jackson.version>2.9.5</jackson.version>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
@@ -107,14 +112,10 @@
         <dependency>
             <groupId>org.kill-bill.billing.plugin.java</groupId>
             <artifactId>killbill-base-plugin</artifactId>
-            <!-- Pre 1.2.0 for 0.18 -->
-            <version>1.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.kill-bill.billing.plugin.java</groupId>
             <artifactId>killbill-base-plugin</artifactId>
-            <!-- Pre 1.2.0 for 0.18 -->
-            <version>1.1.2</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -173,6 +174,17 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.18</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>1.57</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

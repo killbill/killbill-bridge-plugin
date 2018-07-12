@@ -1,4 +1,42 @@
+0.0.12
+    Fix refund implementation
+    Update killbill-oss-parent to 0.141.97
+
+0.0.11
+    Fix IDs mapping in PaymentTransactionInfoPluginResultConverter
+    Add healthcheck
+    Update killbill-oss-parent to 0.141.90
+
+0.0.10
+    Add support for aborted payments
+    Update killbill-oss-parent to 0.141.78
+    Update Jackson to 2.9.5
+
+0.0.9
+    DO NOT USE
+
+0.0.8
+    DO NOT USE
+
+0.0.7
+    Update base pom.xml
+
+0.0.6
+    Improvements around exceptions handlings and better logging
+
+0.0.5
+    config: fix PaymentConfig parsing
+
+0.0.4
+    config: add option for passing default plugin properties
+    config: switch to YAML format and add multi-regions support
+    Update to killbill-oss-parent 0.141.54
+
+0.0.3
+    NPE fix in BridgePaymentPluginApi.getPaymentInfo
+
+0.0.2
+    Update to killbill-oss-parent 0.141.44
+
 0.0.1
     Initial release
-
-

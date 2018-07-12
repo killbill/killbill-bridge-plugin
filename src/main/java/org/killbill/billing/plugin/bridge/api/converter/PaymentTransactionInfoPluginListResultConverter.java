@@ -17,18 +17,53 @@
 
 package org.killbill.billing.plugin.bridge.api.converter;
 
-import org.killbill.billing.payment.plugin.api.PaymentTransactionInfoPlugin;
-
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
+import org.killbill.billing.payment.api.Payment;
+import org.killbill.billing.payment.plugin.api.PaymentPluginApiException;
+import org.killbill.billing.payment.plugin.api.PaymentTransactionInfoPlugin;
+import org.killbill.billing.plugin.bridge.api.resolver.local.LocalResolver;
+import org.killbill.billing.util.callcontext.TenantContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ImmutableList;
 
 public class PaymentTransactionInfoPluginListResultConverter implements ResultConverter<org.killbill.billing.client.model.Payment, List<PaymentTransactionInfoPlugin>> {
 
+    private static final Logger logger = LoggerFactory.getLogger(PaymentTransactionInfoPluginListResultConverter.class);
+
+    private final OSGIKillbillAPI killbillAPI;
+    private final UUID kbPaymentId;
+    private final TenantContext context;
+
+    public PaymentTransactionInfoPluginListResultConverter(final OSGIKillbillAPI killbillAPI, final UUID kbPaymentId, final TenantContext context) {
+        this.killbillAPI = killbillAPI;
+        this.kbPaymentId = kbPaymentId;
+        this.context = context;
+    }
+
     @Override
-    public List<PaymentTransactionInfoPlugin> convertModelToApi(final org.killbill.billing.client.model.Payment payment) {
-        return payment.getTransactions()
-                .stream()
-                .map(targetTransaction -> new PaymentTransactionInfoPluginResultConverter().convertModelToApi(targetTransaction))
-                .collect(Collectors.toList());
+    public List<PaymentTransactionInfoPlugin> convertModelToApi(final org.killbill.billing.client.model.Payment kbPPayment) {
+        if (kbPPayment == null || kbPPayment.getTransactions() == null) {
+            return ImmutableList.<PaymentTransactionInfoPlugin>of();
+        }
+
+            final LocalResolver localResolver = new LocalResolver(killbillAPI, context);
+            final Payment kbSPayment;
+            try {
+                kbSPayment = localResolver.getPayment(kbPaymentId);
+            } catch (PaymentPluginApiException e) {
+                logger.warn("Failed to retrieve kbPaymentId='{}'", kbPaymentId, e);
+                return ImmutableList.<PaymentTransactionInfoPlugin>of();
+            }
+
+        return kbPPayment.getTransactions()
+                      .stream()
+                      .map(kbPTransaction -> new PaymentTransactionInfoPluginResultConverter(kbSPayment).convertModelToApi(kbPTransaction))
+                      .collect(Collectors.toList());
     }
 }

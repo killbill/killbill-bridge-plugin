@@ -17,30 +17,51 @@
 
 package org.killbill.billing.plugin.bridge.api.converter;
 
+import java.util.Optional;
+
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.client.model.PaymentTransaction;
-import org.killbill.billing.payment.api.TransactionType;
+import org.killbill.billing.payment.api.Payment;
 import org.killbill.billing.payment.plugin.api.PaymentTransactionInfoPlugin;
 import org.killbill.billing.plugin.api.payment.PluginPaymentTransactionInfoPlugin;
-import org.killbill.billing.plugin.bridge.api.BridgePaymentPluginApi;
 
 public class PaymentTransactionInfoPluginResultConverter implements ResultConverter<PaymentTransaction, PaymentTransactionInfoPlugin> {
 
+    private final Payment kbSPayment;
+
+    public PaymentTransactionInfoPluginResultConverter(final Payment kbSPayment) {
+        this.kbSPayment = kbSPayment;
+    }
+
     @Override
-    public PaymentTransactionInfoPlugin convertModelToApi(final PaymentTransaction paymentTransaction) {
-        return new PluginPaymentTransactionInfoPlugin(paymentTransaction.getPaymentId(),
-                paymentTransaction.getTransactionId(),
-                TransactionType.valueOf(paymentTransaction.getTransactionType()),
-                paymentTransaction.getAmount(),
-                Currency.valueOf(paymentTransaction.getCurrency()),
-                ConverterHelper.toPluginStatus(paymentTransaction.getStatus()),
-                paymentTransaction.getGatewayErrorMsg(),
-                paymentTransaction.getGatewayErrorCode(),
-                paymentTransaction.getFirstPaymentReferenceId(),
-                paymentTransaction.getSecondPaymentReferenceId(),
-                paymentTransaction.getEffectiveDate(),
-                paymentTransaction.getEffectiveDate(),
-                ConverterHelper.convertToApiPluginProperties(paymentTransaction.getProperties()));
+    public PaymentTransactionInfoPlugin convertModelToApi(final PaymentTransaction kbPTransaction) {
+        if (kbPTransaction == null) {
+            return null;
+        }
+
+        final Optional<org.killbill.billing.payment.api.PaymentTransaction> kbSTransactionOptional = kbSPayment.getTransactions()
+                                                                                                               .stream()
+                                                                                                               .filter(t -> t.getExternalKey().equals(kbPTransaction.getTransactionExternalKey()))
+                                                                                                               .findFirst();
+
+        if (!kbSTransactionOptional.isPresent()) {
+            return null;
+        }
+
+        final org.killbill.billing.payment.api.PaymentTransaction kbSTransaction = kbSTransactionOptional.get();
+        return new PluginPaymentTransactionInfoPlugin(kbSTransaction.getPaymentId(),
+                                                      kbSTransaction.getId(),
+                                                      kbSTransaction.getTransactionType(),
+                                                      kbPTransaction.getAmount(),
+                                                      Currency.valueOf(kbPTransaction.getCurrency()),
+                                                      ConverterHelper.toPluginStatus(kbPTransaction.getStatus()),
+                                                      kbPTransaction.getGatewayErrorMsg(),
+                                                      kbPTransaction.getGatewayErrorCode(),
+                                                      kbPTransaction.getFirstPaymentReferenceId(),
+                                                      kbPTransaction.getSecondPaymentReferenceId(),
+                                                      kbPTransaction.getEffectiveDate(),
+                                                      kbPTransaction.getEffectiveDate(),
+                                                      ConverterHelper.convertToApiPluginProperties(kbPTransaction.getProperties()));
 
     }
 }

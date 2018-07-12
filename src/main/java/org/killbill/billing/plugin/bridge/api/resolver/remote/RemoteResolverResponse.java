@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -26,13 +26,11 @@ public class RemoteResolverResponse {
     private final UUID accountIdMapping;
     private final UUID paymentMethodIdMapping;
     private final UUID paymentIdMapping;
-    private final UUID transactionIdMapping;
 
-    public RemoteResolverResponse(final UUID accountIdMapping, final UUID paymentMethodIdMapping, final UUID paymentIdMapping, final UUID transactionIdMapping) {
+    public RemoteResolverResponse(final UUID accountIdMapping, final UUID paymentMethodIdMapping, final UUID paymentIdMapping) {
         this.accountIdMapping = accountIdMapping;
         this.paymentMethodIdMapping = paymentMethodIdMapping;
         this.paymentIdMapping = paymentIdMapping;
-        this.transactionIdMapping = transactionIdMapping;
     }
 
     public UUID getAccountIdMapping() {
@@ -45,10 +43,6 @@ public class RemoteResolverResponse {
 
     public UUID getPaymentIdMapping() {
         return paymentIdMapping;
-    }
-
-    public UUID getTransactionIdMapping() {
-        return transactionIdMapping;
     }
 
     public static class RemoteResolverResponseBuilder {
@@ -84,7 +78,6 @@ public class RemoteResolverResponse {
                 case PAYMENT_METHOD:
                     return paymentMethodIdMapping;
                 case PAYMENT:
-                case PAYMENT_AND_TRANSACTION:
                     return paymentIdMapping;
                 default:
                     throw new IllegalStateException("unknown type " + type);
@@ -92,7 +85,7 @@ public class RemoteResolverResponse {
         }
 
         public RemoteResolverResponse build() {
-            return new RemoteResolverResponse(accountIdMapping, paymentMethodIdMapping, paymentIdMapping, transactionIdMapping);
+            return new RemoteResolverResponse(accountIdMapping, paymentMethodIdMapping, paymentIdMapping);
         }
     }
 }

@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,23 +17,18 @@
 
 package org.killbill.billing.plugin.bridge;
 
-import com.google.common.collect.ImmutableList;
-
-import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
+
+import org.killbill.billing.payment.api.PluginProperty;
+import org.killbill.billing.plugin.api.PluginProperties;
 
 public class PaymentConfig {
 
-
-    private final PaymentProxyModel proxyModel;
-    private final String internalPaymentMethodIdName;
-    private final List<String> controlPlugins;
-
-    public PaymentConfig(final String proxyModel, final String internalPaymentMethodIdName, @Nullable final String controlPluginList) {
-        this.internalPaymentMethodIdName = internalPaymentMethodIdName;
-        this.proxyModel = PaymentProxyModel.findPaymentProxyModel(proxyModel);
-        this.controlPlugins = controlPluginList != null ? ImmutableList.copyOf(controlPluginList.split(",\\s*")) : ImmutableList.of();
-    }
+    public PaymentProxyModel proxyModel;
+    public String internalPaymentMethodIdName;
+    public List<String> controlPlugins;
+    public Map pluginProperties;
 
     public PaymentProxyModel getProxyModel() {
         return proxyModel;
@@ -45,5 +40,9 @@ public class PaymentConfig {
 
     public List<String> getControlPlugins() {
         return controlPlugins;
+    }
+
+    public List<PluginProperty> getPluginProperties() {
+        return PluginProperties.buildPluginProperties(pluginProperties);
     }
 }

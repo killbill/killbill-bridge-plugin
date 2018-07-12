@@ -15,10 +15,10 @@
  * under the License.
  */
 
-package org.killbill.billing.plugin.bridge.api.resolver;
+package org.killbill.billing.plugin.bridge;
 
-public enum ResolvingType {
-    ACCOUNT,
-    PAYMENT_METHOD,
-    PAYMENT,
+public class BridgeConfig {
+
+    public KillbillClientConfig killbillClientConfig;
+    public PaymentConfig paymentConfig;
 }

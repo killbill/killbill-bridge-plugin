@@ -17,23 +17,26 @@
 
 package org.killbill.billing.plugin.bridge;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Hashtable;
+
+import org.killbill.billing.client.KillBillClient;
+import org.killbill.billing.osgi.api.Healthcheck;
 import org.killbill.billing.osgi.api.OSGIPluginProperties;
 import org.killbill.billing.osgi.libs.killbill.KillbillActivatorBase;
 import org.killbill.billing.payment.plugin.api.PaymentPluginApi;
 import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHandler;
 import org.killbill.billing.plugin.bridge.api.BridgePaymentPluginApi;
+import org.killbill.billing.plugin.bridge.core.BridgeHealthcheck;
+import org.killbill.billing.plugin.core.config.PluginEnvironmentConfig;
 import org.osgi.framework.BundleContext;
 
-import java.util.Hashtable;
-
-
-//TODO healtcheck
 public class BridgeActivator extends KillbillActivatorBase {
 
     public static final String PLUGIN_NAME = "killbill-bridge";
 
     public static final String PROPERTY_PREFIX = "org.killbill.billing.plugin.bridge.";
-
 
     private KillbillClientConfigurationHandler killbillClientConfigurationHandler;
     private PaymentConfigurationHandler paymentConfigurationHandler;
@@ -42,14 +45,40 @@ public class BridgeActivator extends KillbillActivatorBase {
     public void start(final BundleContext context) throws Exception {
         super.start(context);
 
-        killbillClientConfigurationHandler = new KillbillClientConfigurationHandler(PLUGIN_NAME, killbillAPI, logService);
-        paymentConfigurationHandler = new PaymentConfigurationHandler(PLUGIN_NAME, killbillAPI, logService);
-        final BridgePaymentPluginApi api = new BridgePaymentPluginApi(killbillAPI, logService, killbillClientConfigurationHandler, paymentConfigurationHandler);
+        final String region = PluginEnvironmentConfig.getRegion(configProperties.getProperties());
+
+        killbillClientConfigurationHandler = new KillbillClientConfigurationHandler(PLUGIN_NAME, killbillAPI, logService, region);
+
+        final KillBillClient globalKillBillClient = getGlobalKillBillClient();
+        killbillClientConfigurationHandler.setDefaultConfigurable(globalKillBillClient);
+
+        paymentConfigurationHandler = new PaymentConfigurationHandler(PLUGIN_NAME, killbillAPI, logService, region);
+
+        final PaymentPluginApi api = new BridgePaymentPluginApi(killbillAPI, logService, killbillClientConfigurationHandler, paymentConfigurationHandler);
         registerPaymentPluginApi(context, api);
 
         registerEventHandlers();
+
+        final Healthcheck bridgeHealthcheck = new BridgeHealthcheck(killbillClientConfigurationHandler);
+        registerHealthcheck(context, bridgeHealthcheck);
     }
 
+    private KillBillClient getGlobalKillBillClient() throws MalformedURLException {
+        final BridgeConfig bridgeConfig = new BridgeConfig();
+        bridgeConfig.killbillClientConfig = new KillbillClientConfig();
+
+        final String serverUrlString = configProperties.getString(PROPERTY_PREFIX + "serverUrl");
+        if (serverUrlString == null) {
+            return null;
+        }
+
+        bridgeConfig.killbillClientConfig.serverUrl = new URL(serverUrlString);
+        bridgeConfig.killbillClientConfig.username = configProperties.getString(PROPERTY_PREFIX + "username");
+        bridgeConfig.killbillClientConfig.password = configProperties.getString(PROPERTY_PREFIX + "password");
+        bridgeConfig.killbillClientConfig.apiKey = configProperties.getString(PROPERTY_PREFIX + "apiKey");
+        bridgeConfig.killbillClientConfig.apiSecret = configProperties.getString(PROPERTY_PREFIX + "apiSecret");
+        return killbillClientConfigurationHandler.createConfigurable(bridgeConfig);
+    }
 
     private void registerPaymentPluginApi(final BundleContext context, final PaymentPluginApi api) {
         final Hashtable<String, String> props = new Hashtable<String, String>();
@@ -59,8 +88,13 @@ public class BridgeActivator extends KillbillActivatorBase {
 
     private void registerEventHandlers() {
         final PluginConfigurationEventHandler pluginConfigurationEventHandler = new PluginConfigurationEventHandler(killbillClientConfigurationHandler,
-                paymentConfigurationHandler);
+                                                                                                                    paymentConfigurationHandler);
         dispatcher.registerEventHandlers(pluginConfigurationEventHandler);
     }
 
+    private void registerHealthcheck(final BundleContext context, final Healthcheck healthcheck) {
+        final Hashtable<String, String> props = new Hashtable<String, String>();
+        props.put(OSGIPluginProperties.PLUGIN_NAME_PROP, PLUGIN_NAME);
+        registrar.registerService(context, Healthcheck.class, healthcheck, props);
+    }
 }

@@ -15,10 +15,21 @@
  * under the License.
  */
 
-package org.killbill.billing.plugin.bridge.api.resolver;
+package org.killbill.billing.plugin.bridge;
 
-public enum ResolvingType {
-    ACCOUNT,
-    PAYMENT_METHOD,
-    PAYMENT,
+import java.net.URL;
+
+public class KillbillClientConfig {
+
+    public URL serverUrl;
+    public String username;
+    public String password;
+    public String apiKey;
+    public String apiSecret;
+    public URL proxyUrl;
+    public Integer connectTimeOut;
+    public Integer readTimeOut;
+    public Integer requestTimeout;
+    public Boolean strictSSL;
+    public String SSLProtocol;
 }
