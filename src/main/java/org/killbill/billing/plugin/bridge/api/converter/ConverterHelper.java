@@ -96,7 +96,7 @@ public class ConverterHelper {
         if (transactions != null && !transactions.isEmpty()) {
             result = transactions.stream().filter(paymentTransaction -> (kbTransactionExternalKey != null && paymentTransaction.getTransactionExternalKey().equals(kbTransactionExternalKey)))
                     //.peek(paymentTransaction -> System.err.println(String.format(".... transactionId ='%s'", paymentTransaction.getTransactionId())))
-                    .collect(Collectors.collectingAndThen(Collectors.toList(), paymentTransactions -> paymentTransactions.isEmpty() ? transactions.get(transactions.size() - 1) : paymentTransactions.get(0)));
+                    .collect(Collectors.collectingAndThen(Collectors.toList(), paymentTransactions -> paymentTransactions.isEmpty() ? transactions.get(transactions.size() - 1) : paymentTransactions.get(paymentTransactions.size() - 1)));
         }
         return Optional.ofNullable(result);
     }
