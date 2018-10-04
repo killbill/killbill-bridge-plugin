@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2018 Groupon, Inc
+ * Copyright 2014-2018 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,7 +17,7 @@
 
 package org.killbill.billing.plugin.bridge.api.converter;
 
-import java.util.Optional;
+import java.util.List;
 
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.client.model.PaymentTransaction;
@@ -25,12 +25,17 @@ import org.killbill.billing.payment.api.Payment;
 import org.killbill.billing.payment.plugin.api.PaymentTransactionInfoPlugin;
 import org.killbill.billing.plugin.api.payment.PluginPaymentTransactionInfoPlugin;
 
+import com.google.common.collect.LinkedListMultimap;
+
 public class PaymentTransactionInfoPluginResultConverter implements ResultConverter<PaymentTransaction, PaymentTransactionInfoPlugin> {
 
     private final Payment kbSPayment;
+    // -1 means last one
+    private final int kbPTxNb;
 
-    public PaymentTransactionInfoPluginResultConverter(final Payment kbSPayment) {
+    public PaymentTransactionInfoPluginResultConverter(final Payment kbSPayment, final int kbPTxNb) {
         this.kbSPayment = kbSPayment;
+        this.kbPTxNb = kbPTxNb;
     }
 
     @Override
@@ -39,16 +44,22 @@ public class PaymentTransactionInfoPluginResultConverter implements ResultConver
             return null;
         }
 
-        final Optional<org.killbill.billing.payment.api.PaymentTransaction> kbSTransactionOptional = kbSPayment.getTransactions()
-                                                                                                               .stream()
-                                                                                                               .filter(t -> t.getExternalKey().equals(kbPTransaction.getTransactionExternalKey()))
-                                                                                                               .findFirst();
-
-        if (!kbSTransactionOptional.isPresent()) {
-            return null;
+        final LinkedListMultimap<String, org.killbill.billing.payment.api.PaymentTransaction> kbSPaymentTransactionsByExternalKey = LinkedListMultimap.create();
+        for (final org.killbill.billing.payment.api.PaymentTransaction kbSPaymentTransaction : kbSPayment.getTransactions()) {
+            kbSPaymentTransactionsByExternalKey.put(kbSPaymentTransaction.getExternalKey(), kbSPaymentTransaction);
         }
 
-        final org.killbill.billing.payment.api.PaymentTransaction kbSTransaction = kbSTransactionOptional.get();
+        // We rely on the ordering, both on KB_S and KB_P, to match transactions with the same external key (we don't have any other way unfortunately)
+        org.killbill.billing.payment.api.PaymentTransaction kbSTransaction = null;
+        final List<org.killbill.billing.payment.api.PaymentTransaction> kbSPaymentTransactionsForExternalKey = kbSPaymentTransactionsByExternalKey.get(kbPTransaction.getTransactionExternalKey());
+        if (kbSPaymentTransactionsForExternalKey.isEmpty()) {
+            return null;
+        } else if (kbPTxNb == -1) {
+            kbSTransaction = kbSPaymentTransactionsForExternalKey.get(kbSPaymentTransactionsForExternalKey.size() - 1);
+        } else {
+            kbSTransaction = kbSPaymentTransactionsForExternalKey.get(kbPTxNb);
+        }
+
         return new PluginPaymentTransactionInfoPlugin(kbSTransaction.getPaymentId(),
                                                       kbSTransaction.getId(),
                                                       kbSTransaction.getTransactionType(),

@@ -425,7 +425,7 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
         };
 
         try {
-            PaymentTransactionInfoPlugin result = internalGenericPaymentTransactionOperation(op, new PaymentTransactionInfoPluginResultConverter(payment), context.getTenantId());
+            final PaymentTransactionInfoPlugin result = internalGenericPaymentTransactionOperation(op, new PaymentTransactionInfoPluginResultConverter(payment, -1), context.getTenantId());
 
             logService.log(LogService.LOG_INFO, String.format("Bridge Payment EXITING: Success running transactionType='%s', kbAccountId='%s', kbPaymentId='%s', kbPaymentMethodId='%s', amount='%s', currency='%s'",
                                                               transactionType, kbAccountId, kbPaymentId, kbPaymentMethodId, amount, currency));
