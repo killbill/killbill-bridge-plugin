@@ -369,6 +369,90 @@ public class TestBridgePaymentPluginApi {
     }
 
     @Test(groups = "slow")
+    public void testGetForJanitorWithDataIntegrityIssue() throws Exception {
+        final UUID kbSPaymentId = payment.getId();
+        final String kbSPaymentExternalKey = payment.getExternalKey();
+
+        final String kbSPurchaseTransactionExternalKey = UUID.randomUUID().toString();
+        final PaymentTransaction purchase1Transaction = TestUtils.buildPaymentTransaction(payment, kbSPurchaseTransactionExternalKey, TransactionType.PURCHASE, TransactionStatus.PAYMENT_FAILURE, BigDecimal.TEN, Currency.USD);
+        final PaymentTransaction purchase2Transaction = TestUtils.buildPaymentTransaction(payment, kbSPurchaseTransactionExternalKey, TransactionType.PURCHASE, TransactionStatus.PAYMENT_FAILURE, BigDecimal.TEN, Currency.USD);
+        final PaymentTransaction purchase3Transaction = TestUtils.buildPaymentTransaction(payment, kbSPurchaseTransactionExternalKey, TransactionType.PURCHASE, TransactionStatus.UNKNOWN, BigDecimal.TEN, Currency.USD);
+
+        // External keys match, but not the ID
+        final UUID kbPAccountId = UUID.randomUUID();
+        final UUID kbPPaymentId = UUID.randomUUID();
+        final UUID kbPPurchase1TransactionId = UUID.randomUUID();
+        final UUID kbPPurchase2TransactionId = UUID.randomUUID();
+        final UUID kbPPaymentMethodId = UUID.randomUUID();
+
+        final String purchase1TransactionResponse = "{\"transactionId\":\"" + kbPPurchase1TransactionId + "\"," +
+                                                    "\"transactionExternalKey\":\"" + kbSPurchaseTransactionExternalKey + "\"," +
+                                                    "\"paymentId\":\"" + kbPPaymentId + "\"," +
+                                                    "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
+                                                    "\"transactionType\":\"PURCHASE\"," +
+                                                    "\"amount\":10.00," +
+                                                    "\"currency\":\"USD\"," +
+                                                    "\"effectiveDate\":\"2018-06-10T15:47:00.000Z\"," +
+                                                    "\"processedAmount\":0.00," +
+                                                    "\"processedCurrency\":\"USD\"," +
+                                                    "\"status\":\"PAYMENT_FAILURE\"}";
+        final String purchase2TransactionResponse = "{\"transactionId\":\"" + kbPPurchase2TransactionId + "\"," +
+                                                    "\"transactionExternalKey\":\"" + kbSPurchaseTransactionExternalKey + "\"," +
+                                                    "\"paymentId\":\"" + kbPPaymentId + "\"," +
+                                                    "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
+                                                    "\"transactionType\":\"PURCHASE\"," +
+                                                    "\"amount\":10.00," +
+                                                    "\"currency\":\"USD\"," +
+                                                    "\"effectiveDate\":\"2018-06-11T15:47:00.000Z\"," +
+                                                    "\"processedAmount\":10.00," +
+                                                    "\"processedCurrency\":\"USD\"," +
+                                                    "\"status\":\"SUCCESS\"}";
+        final String paymentResponse = "{\"accountId\":\"" + kbPAccountId.toString() + "\"," +
+                                       "\"paymentId\":\"" + kbPPaymentId + "\"," +
+                                       "\"paymentExternalKey\":\"" + kbSPaymentExternalKey + "\"," +
+                                       "\"currency\":\"USD\"," +
+                                       "\"paymentMethodId\":\"" + kbPPaymentMethodId + "\"," +
+                                       "\"transactions\":";
+        final String paymentWithTransactionsResponse = paymentResponse + "[" +
+                                                       purchase1TransactionResponse + "," +
+                                                       purchase2TransactionResponse + "]}";
+
+        final List<PaymentTransactionInfoPlugin> result = WireMockHelper.doWithWireMock(new WithWireMock<List<PaymentTransactionInfoPlugin>>() {
+            @Override
+            public List<PaymentTransactionInfoPlugin> execute(final WireMockServer server) throws PaymentPluginApiException {
+                stubFor(get(urlPathEqualTo("/1.0/kb/accounts"))
+                                .willReturn(aResponse().withBody("{\"accountId\":\"" + kbPAccountId.toString() + "\"," +
+                                                                 "\"externalKey\":\"" + account.getExternalKey() + "\"}")
+                                                       .withStatus(200)));
+
+                // GET requests
+                stubFor(get(urlPathEqualTo("/1.0/kb/payments/" + kbPPaymentId))
+                                .willReturn(aResponse().withBody(paymentWithTransactionsResponse).withStatus(200)));
+                stubFor(get(urlPathEqualTo("/1.0/kb/payments"))
+                                .willReturn(aResponse().withBody(paymentWithTransactionsResponse).withStatus(200)));
+
+                return pluginApi.getPaymentInfo(account.getId(),
+                                                kbSPaymentId,
+                                                ImmutableList.<PluginProperty>of(),
+                                                callContext);
+            }
+        });
+        Assert.assertEquals(result.size(), 3);
+        Assert.assertEquals(result.get(0).getTransactionType(), TransactionType.PURCHASE);
+        Assert.assertEquals(result.get(0).getKbPaymentId(), payment.getId());
+        Assert.assertEquals(result.get(0).getKbTransactionPaymentId(), purchase1Transaction.getId());
+        Assert.assertEquals(result.get(0).getStatus(), PaymentPluginStatus.ERROR);
+        Assert.assertEquals(result.get(1).getTransactionType(), TransactionType.PURCHASE);
+        Assert.assertEquals(result.get(1).getKbPaymentId(), payment.getId());
+        Assert.assertEquals(result.get(1).getKbTransactionPaymentId(), purchase2Transaction.getId());
+        Assert.assertEquals(result.get(1).getStatus(), PaymentPluginStatus.PROCESSED);
+        Assert.assertEquals(result.get(2).getTransactionType(), TransactionType.PURCHASE);
+        Assert.assertEquals(result.get(2).getKbPaymentId(), payment.getId());
+        Assert.assertEquals(result.get(2).getKbTransactionPaymentId(), purchase3Transaction.getId());
+        Assert.assertEquals(result.get(2).getStatus(), PaymentPluginStatus.PROCESSED);
+    }
+
+    @Test(groups = "slow")
     public void testGetSuccessfulPaymentAfterRetry() throws Exception {
         final UUID kbSPaymentId = payment.getId();
         final String kbSPaymentExternalKey = payment.getExternalKey();

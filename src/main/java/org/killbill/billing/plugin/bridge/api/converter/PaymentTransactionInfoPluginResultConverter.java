@@ -30,12 +30,9 @@ import com.google.common.collect.LinkedListMultimap;
 public class PaymentTransactionInfoPluginResultConverter implements ResultConverter<PaymentTransaction, PaymentTransactionInfoPlugin> {
 
     private final Payment kbSPayment;
-    // -1 means last one
-    private final int kbPTxNb;
 
-    public PaymentTransactionInfoPluginResultConverter(final Payment kbSPayment, final int kbPTxNb) {
+    public PaymentTransactionInfoPluginResultConverter(final Payment kbSPayment) {
         this.kbSPayment = kbSPayment;
-        this.kbPTxNb = kbPTxNb;
     }
 
     @Override
@@ -50,14 +47,12 @@ public class PaymentTransactionInfoPluginResultConverter implements ResultConver
         }
 
         // We rely on the ordering, both on KB_S and KB_P, to match transactions with the same external key (we don't have any other way unfortunately)
-        org.killbill.billing.payment.api.PaymentTransaction kbSTransaction = null;
+        org.killbill.billing.payment.api.PaymentTransaction kbSTransaction;
         final List<org.killbill.billing.payment.api.PaymentTransaction> kbSPaymentTransactionsForExternalKey = kbSPaymentTransactionsByExternalKey.get(kbPTransaction.getTransactionExternalKey());
         if (kbSPaymentTransactionsForExternalKey.isEmpty()) {
             return null;
-        } else if (kbPTxNb == -1) {
-            kbSTransaction = kbSPaymentTransactionsForExternalKey.get(kbSPaymentTransactionsForExternalKey.size() - 1);
         } else {
-            kbSTransaction = kbSPaymentTransactionsForExternalKey.get(kbPTxNb);
+            kbSTransaction = kbSPaymentTransactionsForExternalKey.get(kbSPaymentTransactionsForExternalKey.size() - 1);
         }
 
         return new PluginPaymentTransactionInfoPlugin(kbSTransaction.getPaymentId(),
