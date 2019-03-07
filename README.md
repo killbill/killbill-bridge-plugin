@@ -10,6 +10,7 @@ Kill Bill compatibility
 | -------------: | ----------------: |
 | 0.0.y          | 0.19.z            |
 | 0.1.y          | 0.20.z            |
+| 0.2.y          | 0.21.z            |
 
 # Overview
 
@@ -40,7 +41,7 @@ There are two main models that we can identify, called respectively `proxy` and 
 # Configuration
 
 
-This plugin implements the [Kill Bill payment plugin api](https://github.com/killbill/killbill-plugin-api/blob/master/payment/src/main/java/org/killbill/billing/payment/plugin/api/PaymentPluginApi.java) and is intended to connect as a bridge between a Kill Bill system operating for handling billing components (Subscriptions, Invoices, ...) 
+This plugin implements the [Kill Bill payment plugin api](https://github.com/killbill/killbill-plugin-api/blob/master/payment/src/main/java/org/killbill/billing/payment/plugin/api/PaymentPluginApi.java) and is intended to connect as a bridge between a Kill Bill system operating for handling billing components (Subscriptions, Invoices, ...)
 and another Kill Bill system operating for handling payments.
 
 The plugin will need to have the default configuration parameter to connect to the remote Kill Bill (payment) system.
