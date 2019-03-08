@@ -24,7 +24,7 @@
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>bridge-plugin</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.0</version>
     <packaging>bundle</packaging>
     <name>Kill Bill OSGI Bridge plugin</name>
     <description>Kill Bill Bridge plugin</description>
