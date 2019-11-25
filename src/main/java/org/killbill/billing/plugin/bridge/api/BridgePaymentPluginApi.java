@@ -304,14 +304,19 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
 
     @Override
     public GatewayNotification processNotification(final String notification, final Iterable<PluginProperty> properties, final CallContext context) throws PaymentPluginApiException {
-        final KillBillClient client = configurationHandler.getConfigurable(context.getTenantId());
 
+        KillBillClient client = null;
         try {
+            client = configurationHandler.getConfigurable(context.getTenantId());
             final Response response = client.processNotification(notification, null /* TODO ????*/, ConverterHelper.convertToClientMapPluginProperties(properties), DEFAULT_OPTIONS);
             // TODO
             return null;
         } catch (final KillBillClientException e) {
             throw new PaymentPluginApiException(String.format("Failed to processNotification for %s", notification), e);
+        } finally {
+            if (client != null) {
+                client.close();
+            }
         }
     }
 
@@ -440,8 +445,9 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
 
     private <R, CR> CR internalGenericPaymentTransactionOperation(final ClientOperation<R> op, final ResultConverter<R, CR> converter, final UUID tenantId) throws PaymentPluginApiException {
 
-        final KillBillClient client = configurationHandler.getConfigurable(tenantId);
+        KillBillClient client = null;
         try {
+            client = configurationHandler.getConfigurable(tenantId);
             final R result = op.doOperation(client, DEFAULT_OPTIONS);
             return converter != null ? converter.convertModelToApi(result) : null;
         } catch (final KillBillClientException e) { // When calling killbill client directly
@@ -457,6 +463,10 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
             throw new PaymentBridgePluginApiException(e.getMessage(), op.getKbAccountId(), op.getKbPaymentId(), op.getKbPaymentMethodId(), op.getTransactionType());
         } catch (UnresolvedException e) { // When calling killbill client directly
             throw new PaymentBridgePluginApiException(e.getMessage(), op.getKbAccountId(), op.getKbPaymentId(), op.getKbPaymentMethodId(), op.getTransactionType());
+        }  finally {
+            if (client != null) {
+                client.close();
+            }
         }
     }
 
