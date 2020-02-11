@@ -25,7 +25,7 @@ import org.killbill.billing.plugin.core.config.YAMLPluginTenantConfigurationHand
 
 import com.google.common.base.Preconditions;
 
-public class KillbillClientConfigurationHandler extends YAMLPluginTenantConfigurationHandler<BridgeConfig, KillBillClient> {
+public class KillbillClientConfigurationHandler extends YAMLPluginTenantConfigurationHandler<BridgeConfig, KillBillClientOnOff> {
 
     public KillbillClientConfigurationHandler(final String pluginName,
                                               final OSGIKillbillAPI osgiKillbillAPI,
@@ -35,7 +35,7 @@ public class KillbillClientConfigurationHandler extends YAMLPluginTenantConfigur
     }
 
     @Override
-    protected KillBillClient createConfigurable(final BridgeConfig config) {
+    protected KillBillClientOnOff createConfigurable(final BridgeConfig config) {
         final KillbillClientConfig killbillClientConfig = config.killbillClientConfig;
         Preconditions.checkNotNull(killbillClientConfig, "Plugin misconfigured: killbillClientConfig == null");
 
@@ -53,6 +53,7 @@ public class KillbillClientConfigurationHandler extends YAMLPluginTenantConfigur
         final Integer requestTimeout = killbillClientConfig.requestTimeout;
         final Boolean strictSSL = killbillClientConfig.strictSSL;
         final String SSLProtocol = killbillClientConfig.SSLProtocol;
+        final Boolean isActive = killbillClientConfig.isActive;
 
         final KillBillHttpClient httpClient = new KillBillHttpClient(killbillClientConfig.serverUrl.toString(),
                                                                      username,
@@ -66,6 +67,6 @@ public class KillbillClientConfigurationHandler extends YAMLPluginTenantConfigur
                                                                      requestTimeout,
                                                                      strictSSL,
                                                                      SSLProtocol);
-        return new KillBillClient(httpClient);
+        return new KillBillClientOnOff(httpClient, isActive);
     }
 }

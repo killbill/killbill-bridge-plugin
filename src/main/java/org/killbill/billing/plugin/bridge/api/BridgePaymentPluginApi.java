@@ -45,6 +45,7 @@ import org.killbill.billing.payment.plugin.api.PaymentPluginApi;
 import org.killbill.billing.payment.plugin.api.PaymentPluginApiException;
 import org.killbill.billing.payment.plugin.api.PaymentTransactionInfoPlugin;
 import org.killbill.billing.plugin.api.PluginProperties;
+import org.killbill.billing.plugin.bridge.KillBillClientOnOff;
 import org.killbill.billing.plugin.bridge.KillbillClientConfigurationHandler;
 import org.killbill.billing.plugin.bridge.PaymentConfig;
 import org.killbill.billing.plugin.bridge.PaymentConfigurationHandler;
@@ -315,9 +316,13 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
     @Override
     public GatewayNotification processNotification(final String notification, final Iterable<PluginProperty> properties, final CallContext context) throws PaymentPluginApiException {
 
-        KillBillClient client = null;
+        KillBillClientOnOff client = null;
         try {
             client = configurationHandler.getConfigurable(context.getTenantId());
+            if (!client.isActive()) {
+                logService.log(LogService.LOG_DEBUG, "Skipping deactivated KillBillClient...");
+                return null;
+            }
             final Response response = client.processNotification(notification, null /* TODO ????*/, ConverterHelper.convertToClientMapPluginProperties(properties), DEFAULT_OPTIONS);
             // TODO
             return null;
@@ -457,11 +462,12 @@ public class BridgePaymentPluginApi implements PaymentPluginApi {
 
     private <R, CR> CR internalGenericPaymentTransactionOperation(final ClientOperation<R> op, final ResultConverter<R, CR> converter, final UUID tenantId, final CR defaultValue) throws PaymentPluginApiException {
 
-        KillBillClient client = null;
+        KillBillClientOnOff client = null;
         try {
             // Handle (generic) case where client is not configured
             client = configurationHandler.getConfigurable(tenantId);
-            if (client == null) {
+            if (!client.isActive()) {
+                logService.log(LogService.LOG_DEBUG, "Skipping deactivated KillBillClient...");
                 return defaultValue;
             }
             final R result = op.doOperation(client, DEFAULT_OPTIONS);
