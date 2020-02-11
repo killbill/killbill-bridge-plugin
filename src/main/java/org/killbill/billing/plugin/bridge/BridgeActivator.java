@@ -49,7 +49,7 @@ public class BridgeActivator extends KillbillActivatorBase {
 
         killbillClientConfigurationHandler = new KillbillClientConfigurationHandler(PLUGIN_NAME, killbillAPI, logService, region);
 
-        final KillBillClient globalKillBillClient = getGlobalKillBillClient();
+        final KillBillClientOnOff globalKillBillClient = getGlobalKillBillClient();
         killbillClientConfigurationHandler.setDefaultConfigurable(globalKillBillClient);
 
         paymentConfigurationHandler = new PaymentConfigurationHandler(PLUGIN_NAME, killbillAPI, logService, region);
@@ -63,7 +63,7 @@ public class BridgeActivator extends KillbillActivatorBase {
         registerHealthcheck(context, bridgeHealthcheck);
     }
 
-    private KillBillClient getGlobalKillBillClient() throws MalformedURLException {
+    private KillBillClientOnOff getGlobalKillBillClient() throws MalformedURLException {
         final BridgeConfig bridgeConfig = new BridgeConfig();
         bridgeConfig.killbillClientConfig = new KillbillClientConfig();
 

@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2018 Groupon, Inc
- * Copyright 2014-2018 The Billing Project, LLC
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,21 +17,25 @@
 
 package org.killbill.billing.plugin.bridge;
 
-import java.net.URL;
+import org.killbill.billing.client.KillBillClient;
+import org.killbill.billing.client.KillBillHttpClient;
 
-public class KillbillClientConfig {
+public class KillBillClientOnOff extends KillBillClient {
 
-    public URL serverUrl;
-    public String username;
-    public String password;
-    public String apiKey;
-    public String apiSecret;
-    public URL proxyUrl;
-    public Integer connectTimeOut;
-    public Integer readTimeOut;
-    public Integer requestTimeout;
-    public Boolean strictSSL;
-    public String SSLProtocol;
-    public Boolean isActive;
+    private final Boolean isActive;
 
+    public KillBillClientOnOff() {
+        super(new KillBillHttpClient());
+        this.isActive = true;
+    }
+
+    public KillBillClientOnOff(final KillBillHttpClient httpClient, final Boolean isActive) {
+        super(httpClient);
+        this.isActive = isActive;
+    }
+
+    public Boolean isActive() {
+        return isActive;
+    }
 }
+
