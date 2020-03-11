@@ -1,3 +1,6 @@
+0.2.4
+    Disable healthcheck account pagination is client is not enabled
+
 0.2.1
     Updates for Kill Bill 0.21.3
 
