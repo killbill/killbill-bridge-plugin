@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 import org.killbill.billing.client.KillBillClient;
 import org.killbill.billing.client.RequestOptions;
 import org.killbill.billing.osgi.api.Healthcheck;
+import org.killbill.billing.plugin.bridge.KillBillClientOnOff;
 import org.killbill.billing.plugin.bridge.KillbillClientConfigurationHandler;
 import org.killbill.billing.tenant.api.Tenant;
 import org.killbill.billing.util.api.AuditLevel;
@@ -51,7 +52,7 @@ public class BridgeHealthcheck implements Healthcheck {
 
     @Override
     public HealthStatus getHealthStatus(@Nullable final Tenant tenant, @Nullable final Map properties) {
-        final KillBillClient client;
+        final KillBillClientOnOff client;
         try {
             client = configurationHandler.getConfigurable(tenant == null ? null : tenant.getId());
         } catch (final NullPointerException e) {
@@ -59,9 +60,11 @@ public class BridgeHealthcheck implements Healthcheck {
         }
 
         try {
-            client.getAccounts(0L, 1L, AuditLevel.NONE, RequestOptions.builder()
-                                                                      .withCreatedBy("BridgeHealthcheck")
-                                                                      .build());
+            if (client.isActive()) {
+                client.getAccounts(0L, 1L, AuditLevel.NONE, RequestOptions.builder()
+                                                                          .withCreatedBy("BridgeHealthcheck")
+                                                                          .build());
+            }
             return HealthStatus.healthy("KB_P OK");
         } catch (final Exception exception) {
             logger.warn("Healthcheck failed", exception);
