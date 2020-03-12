@@ -35,7 +35,7 @@ public class KillBillClientOnOff extends KillBillClient {
     }
 
     public Boolean isActive() {
-        return isActive;
+        return isActive != null ? isActive : false;
     }
 }
 
